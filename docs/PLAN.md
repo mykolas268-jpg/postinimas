@@ -1,7 +1,24 @@
 # verslas.ai content pipeline — Phase 0 plan
 
-Status: **draft, waiting for owner approval** (Phase 0, step D).
-Date: 2026-09-24. Nothing in this document has been built yet.
+Status: **approved by the owner on 2026-09-24** with the decisions recorded in § 0. Phase 1 in progress.
+Date: 2026-09-24.
+
+## 0. Decisions log
+
+| # | Question | Decision | Date |
+| --- | --- | --- | --- |
+| Plan | Approve this plan | **Approved** | 2026-09-24 |
+| A1 | Pipeline location | `postinimas` repo, PRs into `verslas` | 2026-09-24 |
+| A2 | Repo visibility | Both private (owner changes the setting) | 2026-09-24 |
+| A3 | Branch protection on `verslas/main` | Require green CI, allow admin bypass (admin panel keeps working) | 2026-09-24 |
+| A4 | Content cleanup | Delete the 2 sample articles; label fictional scenarios as examples; source or relabel price ranges | 2026-09-24 |
+| A5 | Measurement | Vercel Web Analytics + a real inquiry form + privacy policy (owner enables analytics in the Vercel dashboard) | 2026-09-24 |
+| A6 | Live audit access | Owner allows `verslas.ai` / `www.verslas.ai` in this environment's network settings | 2026-09-24 (pending) |
+| B1 | Vercel plan / connected repo | **Unknown**; owner checks using the steps provided | open |
+| C1 | Primary goal of articles | **Video orders and the book.** The book is still being written, so its CTA is a waitlist, which needs a working form. | 2026-09-24 |
+| C2 | Phase order | Vertical slice first (D4 accepted) | 2026-09-24 |
+| C3 | Cadence | **4 articles/week** (owner's choice; the review-time risk in § 8.1 stands). Mix stays at the 75/25 default unless changed. | 2026-09-24 |
+| B2–B11 | Remaining spec questions | Open; needed before Phase 2. B4 (author and company details) and B5 (clusters and CTAs) also block parts of Phase 1. | open |
 
 Legend used throughout:
 
@@ -97,7 +114,7 @@ Caveat on bot tests: a WAF that verifies bots by IP range treats a spoofed `GPTB
 | D3 | Generate cover + 1200×630 OG image | **Reuse the site's existing `next/og` OG route.** Omit `cover` (the site already renders a generated fallback panel). Add an optional branded SVG cover later if wanted. | It already exists, uses the design tokens and contains no people. It is less code and less risk. |
 | D4 | Phase order: 2 = ingest/score/brief, 3 = writing + gates | [opinion] **Swap:** build a thin vertical slice first (`article --topic` from the backlog → fact sheet → draft → all gates → shadow PR), then ingestion and scoring. | The riskiest assumption is that the models can produce publishable Lithuanian with zero fabricated facts at an acceptable cost and review time. Ingestion is commodity work. If the drafts don't reach 4/5, the whole plan changes. Your decision — see Q-C2. |
 | D5 | Content mix ~60 % guides / ~40 % news | [opinion] **~75/25**, with most news going into the weekly roundup | Lithuanian search demand for "what vendor X announced" is small [inferred]. Evergreen, commercial-intent guides tied to the services are where search clicks and inquiries come from. Configurable; revisit with GSC data. |
-| D6 | Target 3–5 articles/week | [opinion] **Start at 2–3/week** | A genuine review (claim table + Lithuanian read) takes ~20–40 min per article [guess]. Rubber-stamped approvals erode quality, and they also undermine the AI Act Art. 50(4) human-review exemption (§ 9). |
+| D6 | Target 3–5 articles/week | [opinion] **Start at 2–3/week** — *owner chose 4/week (§ 0, C3)* | A genuine review (claim table + Lithuanian read) takes ~20–40 min per article [guess]. Rubber-stamped approvals erode quality, and they also undermine the AI Act Art. 50(4) human-review exemption (§ 9). |
 
 ---
 
@@ -348,7 +365,8 @@ All figures are **estimates** from current list prices (§ 3.2). They are to be 
 | **Per article** | | **~$3.2 (range $2–6)** |
 | Weekly jobs | refresh re-verification (batched), roundup, report, GSC loop | **~$15/month** |
 | **Monthly, 2–3 articles/week** | ~11 articles | **~$60** |
-| **Monthly, 4–5 articles/week** | ~20 articles | **~$90** |
+| **Monthly, 4 articles/week (chosen)** | ~17 articles | **~$80** |
+| **Monthly, 5 articles/week** | ~22 articles | **~$95** |
 | **Pessimistic** | heavy research + max loops | **~$150** |
 | Shadow period (2 weeks, 1 draft/day) | 14 drafts | **~$50** |
 
