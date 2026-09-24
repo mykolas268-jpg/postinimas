@@ -1,0 +1,31 @@
+name: Live site audit
+
+# Runs docs/live-site-check.sh from a GitHub runner (open internet) and keeps
+# the output as an artifact. Read-only: GET/HEAD requests only.
+
+on:
+  workflow_dispatch:
+    inputs:
+      base:
+        description: Base URL
+        default: https://verslas.ai
+  push:
+    paths:
+      - docs/live-site-check.sh
+      - .github/workflows/live-site-audit.yml
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run live checks
+        run: bash docs/live-site-check.sh "${{ inputs.base || 'https://verslas.ai' }}" | tee live-check.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: live-check
+          path: live-check.txt
