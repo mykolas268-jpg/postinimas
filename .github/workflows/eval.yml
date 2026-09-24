@@ -16,8 +16,13 @@ on:
     - cron: '23 * * * *'
   workflow_dispatch:
 
+# Spending runs share the 'pipeline' group with article.yml. Hourly scheduled
+# checks use their own group: GitHub keeps one pending run per group, so a
+# queued no-op check would otherwise cancel a pending article run. A scheduled
+# run that does start a round first checks that no other pipeline run is
+# active (below), and article.yml refuses to start while one is.
 concurrency:
-  group: pipeline
+  group: ${{ github.event_name == 'schedule' && 'eval-schedule' || 'pipeline' }}
   cancel-in-progress: false
 
 permissions:
@@ -29,6 +34,7 @@ jobs:
     timeout-minutes: 10
     permissions:
       contents: write # evals/round-<n>/started.json on the state branch
+      actions: read # are other pipeline runs active?
     outputs:
       go: ${{ steps.gate.outputs.go }}
       round: ${{ steps.plan.outputs.round }}
@@ -61,6 +67,19 @@ jobs:
             fi
             if [ -f "/tmp/state-probe/evals/round-${round}/started.json" ]; then
               echo "::warning::Round ${round} was started but has no report — not re-running it on schedule. Push eval/request.yml to retry."
+              echo "go=false" >> "$GITHUB_OUTPUT"; exit 0
+            fi
+          fi
+          if [ "$EVENT" = "schedule" ]; then
+            # Outside the 'pipeline' group: never spend alongside another pipeline run.
+            busy=0
+            for status in in_progress queued; do
+              n=$(gh api "repos/${GITHUB_REPOSITORY}/actions/runs?status=${status}&per_page=100" \
+                --jq "[.workflow_runs[] | select(.id != ${GITHUB_RUN_ID}) | select(.path | test(\"workflows/(article|eval)[.]yml\"))] | length")
+              busy=$((busy + n))
+            done
+            if [ "$busy" -gt 0 ]; then
+              echo "::notice::Another pipeline run is active — trying again next hour."
               echo "go=false" >> "$GITHUB_OUTPUT"; exit 0
             fi
           fi
@@ -121,11 +140,7 @@ jobs:
           mkdir -p "state/evals/round-${ROUND}"
           printf '{"run": "%s", "event": "%s", "at": "%s"}\n' "$GITHUB_RUN_ID" "$EVENT" "$(date -u +%FT%TZ)" \
             > "state/evals/round-${ROUND}/started.json"
-          cd state
-          git add -A
-          git -c user.name="verslas-pipeline" -c user.email="actions@users.noreply.github.com" \
-            commit -q -m "eval: round ${ROUND} started (run ${GITHUB_RUN_ID})"
-          git push -q origin state
+          scripts/push-state.sh state "eval: round ${ROUND} started (run ${GITHUB_RUN_ID})"
 
   article:
     needs: plan
@@ -218,9 +233,4 @@ jobs:
         env:
           ROUND: ${{ needs.plan.outputs.round }}
         run: |
-          cd state
-          git add -A
-          if git diff --cached --quiet; then echo "No changes"; exit 0; fi
-          git -c user.name="verslas-pipeline" -c user.email="actions@users.noreply.github.com" \
-            commit -q -m "eval: round ${ROUND} (run ${GITHUB_RUN_ID})"
-          git push -q origin state
+          scripts/push-state.sh state "eval: round ${ROUND} (run ${GITHUB_RUN_ID})"

@@ -47,6 +47,7 @@ jobs:
     timeout-minutes: 60
     permissions:
       contents: write # state branch
+      actions: read # is a scheduled eval round spending?
     outputs:
       status: ${{ steps.article.outputs.status }}
       slug: ${{ steps.article.outputs.slug }}
@@ -59,6 +60,28 @@ jobs:
             echo "::error::ANTHROPIC_API_KEY secret is not set (Settings → Secrets and variables → Actions). Nothing was run."
             exit 1
           fi
+      # Scheduled eval runs sit outside the 'pipeline' concurrency group (see
+      # eval.yml). Never spend alongside a round: the monthly cap assumes one
+      # spender at a time. A scheduled run still in its plan job is waited for.
+      - name: No scheduled eval round in progress
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          for _ in $(seq 1 10); do
+            runs=$(gh api "repos/${GITHUB_REPOSITORY}/actions/workflows/eval.yml/runs?event=schedule&status=in_progress" --jq '.workflow_runs[].id')
+            [ -z "$runs" ] && exit 0
+            for run in $runs; do
+              spending=$(gh api "repos/${GITHUB_REPOSITORY}/actions/runs/${run}/jobs" \
+                --jq '[.jobs[] | select(.name | startswith("article")) | select(.status != "completed")] | length')
+              if [ "$spending" -gt 0 ]; then
+                echo "::error::An eval round (run ${run}) is generating articles. Start this article after it finishes."
+                exit 1
+              fi
+            done
+            sleep 20
+          done
+          echo "::error::A scheduled eval run stayed in its plan step for over 3 minutes; not starting (fail closed)."
+          exit 1
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
@@ -75,6 +98,19 @@ jobs:
           path: site
           token: ${{ secrets.SITE_REPO_TOKEN || github.token }}
           persist-credentials: false
+
+      # The verify job holds no secrets, so it cannot read a private site repo;
+      # it gets the source from here instead (~1 MB, no .git).
+      - name: Keep the site source for verify
+        uses: actions/upload-artifact@v4
+        with:
+          name: site-src
+          path: |
+            site
+            !site/.git
+          include-hidden-files: true
+          if-no-files-found: error
+          retention-days: 3
 
       - name: Check out state branch
         env:
@@ -123,12 +159,7 @@ jobs:
       - name: Save state
         if: always() && inputs.dry_run != true
         run: |
-          cd state
-          git add -A
-          if git diff --cached --quiet; then echo "No state changes"; exit 0; fi
-          git -c user.name="verslas-pipeline" -c user.email="actions@users.noreply.github.com" \
-            commit -q -m "state: article run ${GITHUB_RUN_ID}"
-          git push -q origin state
+          scripts/push-state.sh state "state: article run ${GITHUB_RUN_ID}"
 
       - name: Fail on pipeline error
         if: steps.article.outputs.exit_code == '1'
@@ -146,11 +177,10 @@ jobs:
       NEXT_PUBLIC_SITE_URL: https://www.verslas.ai
       NEXT_TELEMETRY_DISABLED: '1'
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
         with:
-          repository: ${{ env.SITE_REPO }}
+          name: site-src
           path: site
-          persist-credentials: false
       - uses: actions/download-artifact@v4
         with:
           name: article-run
