@@ -9,8 +9,11 @@ import { EXAMPLE_MARKERS, prose, sentences, withoutQuotations } from './text.js'
  * clearly marked as an example.
  */
 
+// A number starts only at a number boundary and has at most four thousands
+// groups ("1 500 000"): linear time on any input (the old `\d[\d\s]*` form
+// restarted at every digit — quadratic — and read "20 30 %" as 2030).
 const NUMBER_WITH_UNIT =
-  /\d[\d\s]*(?:[.,]\d+)?\s?(?:€|EUR|USD|\$|%|proc\.|val\.|min\.?|sek\.?|mln\.?|tūkst\.?|GB|TB|kartų|kartus|dien(?:ų|as|os)|mėn\.?|mėnes(?:ių|iai|io)|metų|kalbų|žodžių|simbolių)/giu;
+  /(?<![\d.,])\d+(?:[ \u00a0\u202f]\d{3}){0,4}(?:[.,]\d+)?\s?(?:€|EUR|USD|\$|%|proc\.|val\.|min\.?|sek\.?|mln\.?|tūkst\.?|GB|TB|kartų|kartus|dien(?:ų|as|os)|mėn\.?|mėnes(?:ių|iai|io)|metų|kalbų|žodžių|simbolių)/giu;
 
 function digits(value: string): string {
   return value.replace(/[^\d]/g, '');

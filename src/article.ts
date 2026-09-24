@@ -137,20 +137,22 @@ export async function runArticle(request: ArticleRequest, options: ArticleRunOpt
       checkOutboundLinks(edited.bodyMdx, draft.sourceUrls, factSheet),
     ];
 
-    // The fact-check costs money; run it only when the cheap gates pass.
+    // The fact-check costs money; run it only when the cheap gates pass. The
+    // free link check runs alongside it (it can take a minute with retries) and
+    // counts only if the fact-check passes too.
     factCheckResult = null;
     if (gates.every((gate) => gate.passed)) {
-      factCheckResult = await factCheck(ctx, { title: edited.title, excerpt: edited.excerpt, bodyMdx: edited.bodyMdx, faq: edited.faq }, factSheet);
-      // Numbers in the title, excerpt and FAQ answers need a source as much as those in the body.
-      const readerText = [edited.title, edited.excerpt, edited.bodyMdx, ...edited.faq.flatMap((item) => [item.q, item.a])].join('\n\n');
-      gates.push(checkFactCheck(factCheckResult, factSheet, readerText, config.houseFacts));
-    }
-    if (options.checkLinks && gates.every((gate) => gate.passed)) {
       const external = [
         ...sources.map((source) => source.url),
         ...markdownLinks(edited.bodyMdx).map((link) => link.url).filter((url) => /^https?:/i.test(url)),
       ];
-      gates.push(await checkLinksResolve(external, options.fetcher));
+      const links = options.checkLinks ? checkLinksResolve(external, options.fetcher) : null;
+      factCheckResult = await factCheck(ctx, { title: edited.title, excerpt: edited.excerpt, bodyMdx: edited.bodyMdx, faq: edited.faq }, factSheet);
+      // Numbers in the title, excerpt and FAQ answers need a source as much as those in the body.
+      const readerText = [edited.title, edited.excerpt, edited.bodyMdx, ...edited.faq.flatMap((item) => [item.q, item.a])].join('\n\n');
+      gates.push(checkFactCheck(factCheckResult, factSheet, readerText, config.houseFacts));
+      const linkGate = links ? await links : null;
+      if (linkGate && gates.every((gate) => gate.passed)) gates.push(linkGate);
     }
 
     writeJson(outDir, `attempt-${attempts}.gates.json`, gates);

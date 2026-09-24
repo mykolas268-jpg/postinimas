@@ -33,13 +33,14 @@ export interface MdLink {
 
 export function markdownLinks(mdx: string): MdLink[] {
   const body = withoutCodeBlocks(mdx).replace(/`[^`\n]*`/g, '');
-  return [...body.matchAll(/(!?)\[([^\]]*)\]\(([^)\s]+)(?:\s+"[^"]*")?\)/g)]
+  // Bracket-free link text and a bounded URL keep this linear on any input.
+  return [...body.matchAll(/(!?)\[([^[\]]*)\]\(([^)\s]{1,2048})(?:\s+"[^"\n]*")?\)/g)]
     .filter((match) => match[1] !== '!')
     .map((match) => ({ text: match[2] ?? '', url: match[3] ?? '' }));
 }
 
 export function markdownImages(mdx: string): { alt: string; url: string }[] {
-  return [...withoutCodeBlocks(mdx).matchAll(/!\[([^\]]*)\]\(([^)\s]+)\)/g)].map((match) => ({
+  return [...withoutCodeBlocks(mdx).matchAll(/!\[([^[\]]*)\]\(([^)\s]{1,2048})\)/g)].map((match) => ({
     alt: match[1] ?? '',
     url: match[2] ?? '',
   }));
@@ -53,8 +54,8 @@ export function prose(mdx: string): string {
   return withoutCodeBlocks(mdx)
     .replace(/`[^`\n]*`/g, ' ')
     .replace(/<\/?[A-Z][A-Za-z]*(?:\s[^>]*)?\/?>/g, ' ')
-    .replace(/!\[[^\]]*\]\([^)]*\)/g, ' ')
-    .replace(/\[([^\]]*)\]\([^)]*\)/g, '$1')
+    .replace(/!\[[^[\]]*\]\([^()\s]*\)/g, ' ')
+    .replace(/\[([^[\]]*)\]\([^()\s]*\)/g, '$1')
     .replace(/^#{1,6}\s+/gm, '')
     .replace(/^\s*(?:[-*+]|\d+\.)\s+/gm, '')
     .replace(/^\s*\|/gm, ' ')
@@ -63,7 +64,9 @@ export function prose(mdx: string): string {
 
 /** Removes „…“ quotations (quoted text is exempt from style rules). */
 export function withoutQuotations(text: string): string {
-  return text.replace(/„[^“\n]*“/g, ' ');
+  // „ cannot occur inside a Lithuanian quotation (inner quotes are ‚…‘), so the
+  // scan stops at the next „ — linear on unbalanced input.
+  return text.replace(/„[^„“\n]*“/g, ' ');
 }
 
 export function words(text: string): string[] {
