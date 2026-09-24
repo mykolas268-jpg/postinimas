@@ -23,6 +23,8 @@ export interface LithuanianOptions {
   dash: string;
   /** Injected for tests; defaults to the system `hunspell` binary. */
   spellcheck?: SpellChecker;
+  /** Injected for tests; defaults to `hunspell -d en_US`. */
+  english?: EnglishLexicon;
 }
 
 export interface Misspelling {
@@ -53,6 +55,24 @@ export const hunspellLt: SpellChecker = (text) => {
     if (none) result.push({ word: none[1]!, suggestions: [] });
   }
   return result;
+};
+
+/**
+ * Returns the words the en_US dictionary knows, or null when it isn't
+ * installed. Used so English terms (camera moves, prompt examples, UI labels)
+ * aren't reported as Lithuanian typos one letter away from a Lithuanian word.
+ */
+export type EnglishLexicon = (words: string[]) => Set<string> | null;
+
+export const hunspellEn: EnglishLexicon = (candidates) => {
+  if (candidates.length === 0) return new Set();
+  const run = spawnSync('hunspell', ['-l', '-d', 'en_US', '-i', 'utf-8'], {
+    input: `${candidates.join('\n')}\n`,
+    encoding: 'utf8',
+  });
+  if (run.error || run.status !== 0 || /Can't open/.test(run.stderr)) return null;
+  const unknown = new Set(run.stdout.split('\n').filter(Boolean));
+  return new Set(candidates.filter((word) => !unknown.has(word)));
 };
 
 function levenshtein(a: string, b: string): number {
@@ -164,6 +184,7 @@ export function checkLithuanian(input: LithuanianInput, options: LithuanianOptio
   } else {
     const stems = options.glossary.spelling.stems.map((stem) => stem.toLowerCase());
     const seen = new Set<string>();
+    const typos: { word: string; closest: string }[] = [];
     for (const { word, suggestions } of misspellings) {
       const lower = word.toLowerCase();
       if (seen.has(lower)) continue;
@@ -181,8 +202,16 @@ export function checkLithuanian(input: LithuanianInput, options: LithuanianOptio
         /^\p{Ll}/u.test(word) &&
         word.length >= 5 &&
         levenshtein(lower, closest.toLowerCase()) === 1;
-      if (likelyTypo) errors.push(`Galima rašybos klaida: „${word}“ → „${closest}“?`);
+      if (likelyTypo) typos.push({ word, closest });
       else warnings.push(`Hunspell nežino žodžio „${word}“${closest ? ` (siūlo „${closest}“)` : ''}.`);
+    }
+    // A valid English word is a term or an example, not a Lithuanian typo.
+    // Without the en_US dictionary every candidate stays an error (fail closed).
+    const english = (options.english ?? hunspellEn)(typos.map((typo) => typo.word));
+    if (english === null && typos.length > 0) warnings.push('hunspell (en_US) neįdiegtas — angliški terminai laikomi klaidomis');
+    for (const { word, closest } of typos) {
+      if (english?.has(word)) warnings.push(`Angliškas žodis „${word}“ — patikrink, ar jis čia reikalingas.`);
+      else errors.push(`Galima rašybos klaida: „${word}“ → „${closest}“?`);
     }
   }
 

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { checkFactCheck, numbersIn, unsupportedNumbers } from '../src/gates/factcheck.js';
-import { checkLithuanian, hunspellLt, type SpellChecker } from '../src/gates/lithuanian.js';
+import { checkLithuanian, hunspellEn, hunspellLt, type SpellChecker } from '../src/gates/lithuanian.js';
 import { checkSeo } from '../src/gates/seo.js';
 import { checkStructure } from '../src/gates/structure.js';
 import { keywordStems } from '../src/gates/text.js';
@@ -50,11 +50,39 @@ describe('Lithuanian gate', () => {
     ];
     const result = checkLithuanian(
       { title: 'A', seoTitle: 'A', excerpt: 'A', body: 'x', faq: [] },
-      { glossary: pc.glossary, banned: pc.banned, dash: '—', spellcheck: spell },
+      { glossary: pc.glossary, banned: pc.banned, dash: '—', spellcheck: spell, english: () => new Set() },
     );
     expect(result.errors).toEqual(['Galima rašybos klaida: „užsakimas“ → „užsakymas“?']);
     expect(result.warnings.join()).toMatch(/ExampleVideo/);
     expect(result.warnings.join()).not.toMatch(/klipų/); // whitelisted stem
+  });
+
+  // Found by running the gate on the site's own published articles: English
+  // camera-move terms ("crane up", "pan right") and prompt examples were
+  // reported as Lithuanian typos one letter away from a Lithuanian word.
+  it('treats valid English words as terms, not Lithuanian typos', () => {
+    const spell: SpellChecker = () => [
+      { word: 'crane', suggestions: ['ciane'] },
+      { word: 'užsakimas', suggestions: ['užsakymas'] },
+    ];
+    const run = (english: (words: string[]) => Set<string> | null) =>
+      checkLithuanian(
+        { title: 'A', seoTitle: 'A', excerpt: 'A', body: 'x', faq: [] },
+        { glossary: pc.glossary, banned: pc.banned, dash: '—', spellcheck: spell, english },
+      );
+    const known = run((words) => new Set(words.filter((word) => word === 'crane')));
+    expect(known.errors).toEqual(['Galima rašybos klaida: „užsakimas“ → „užsakymas“?']);
+    expect(known.warnings.join()).toMatch(/Angliškas žodis „crane“/);
+    // Without the en_US dictionary it fails closed.
+    const missing = run(() => null);
+    expect(missing.errors).toHaveLength(2);
+    expect(missing.warnings.join()).toMatch(/en_US/);
+  });
+
+  it('real hunspell (en_US) knows English terms and not Lithuanian words when installed', () => {
+    const known = hunspellEn(['crane', 'photo', 'užsakimas']);
+    if (known === null) return; // en_US dictionary not installed on this machine
+    expect([...known].sort()).toEqual(['crane', 'photo']);
   });
 
   it('real hunspell (lt_LT) catches a typo when installed', () => {

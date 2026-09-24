@@ -49,6 +49,17 @@ variants of `seoTitle`/`excerpt` and code picks one that fits the limits;
 multi-word keywords tolerate one rephrased word; `Callout` detection ignores
 attribute order; the writer prompt forbids unsourced numbers with units.
 
+Gate calibration on the site's two owner-edited articles (2026-09-24): the
+Lithuanian gate failed `ai-video-turai-brokeriams` on English camera-move
+terms and a prompt example ("crane" → "ciane"?), a proven false positive on
+the site's core video topic. Words the en_US dictionary knows are now
+warnings, not typos (fails closed without `hunspell-en-us`); both articles
+pass that gate. Their structure/SEO failures are expected — they predate the
+pipeline format (no summary box, no FAQ).
+
+Scheduling: the hourly `eval.yml` cron first fired at 15:51 UTC, about five
+hours after it was added; it waits quietly until the key exists.
+
 ### Vercel phase checklist (last phase, owner actions)
 1. Check the plan and the firewall (the "AI Bots" managed ruleset set to Off or Log; Attack Challenge Mode off).
 2. Fix or delete `NEXT_PUBLIC_SITE_URL`. It currently has a leading tab and the apex host; the code already neutralises both.
