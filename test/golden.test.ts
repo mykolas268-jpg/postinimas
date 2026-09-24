@@ -54,6 +54,11 @@ describe.each(fs.readdirSync(goldenDir))('golden article %s', (name) => {
       { glossary: pc.glossary, banned: pc.banned, dash: config.language.dash },
     );
     expect(result.errors).toEqual([]);
+    // In CI the dictionaries are installed; a skipped spell check would make this test vacuous.
+    if (process.env.CI) {
+      expect(result.skipped).toBeUndefined();
+      expect(result.warnings.join()).not.toMatch(/en_US\) neįdiegtas/);
+    }
   });
 
   it('passes the SEO gate', () => {
