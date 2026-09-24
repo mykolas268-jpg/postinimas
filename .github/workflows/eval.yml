@@ -1,0 +1,149 @@
+name: Eval round
+
+# Quality evaluation: generate the eval topics in parallel (dry run, no PRs),
+# then aggregate a report into the state branch (evals/round-<n>/).
+# Triggered by committing eval/request.yml. Needs ANTHROPIC_API_KEY.
+
+on:
+  push:
+    paths: [eval/request.yml]
+  workflow_dispatch:
+
+concurrency:
+  group: pipeline
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  plan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    outputs:
+      round: ${{ steps.plan.outputs.round }}
+      matrix: ${{ steps.plan.outputs.matrix }}
+      per_topic_usd: ${{ steps.plan.outputs.per_topic_usd }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Check out state (read-only)
+        run: |
+          remote="https://github.com/${GITHUB_REPOSITORY}.git"
+          if git ls-remote --exit-code --heads "$remote" state >/dev/null 2>&1; then
+            git clone --quiet --depth 1 --branch state "$remote" state
+          fi
+      - name: Plan topics and budget
+        id: plan
+        run: |
+          node --input-type=module -e "
+            import { load } from 'js-yaml';
+            import fs from 'node:fs';
+            const request = load(fs.readFileSync('eval/request.yml', 'utf8'));
+            const topics = load(fs.readFileSync('config/eval-topics.yml', 'utf8')).items;
+            const config = load(fs.readFileSync('config/config.yml', 'utf8'));
+            const all = topics.map((_, index) => String(index + 1));
+            const chosen = request.topics === 'all' ? all : request.topics.map(String).filter((n) => all.includes(n));
+            const perTopic = Math.min(config.caps.perArticleUsd, config.evaluation.maxUsd / chosen.length);
+            const out = process.env.GITHUB_OUTPUT;
+            fs.appendFileSync(out, 'round=' + request.round + '\n');
+            fs.appendFileSync(out, 'matrix=' + JSON.stringify(chosen) + '\n');
+            fs.appendFileSync(out, 'per_topic_usd=' + perTopic.toFixed(2) + '\n');
+            console.log('round', request.round, 'topics', chosen, 'per topic USD', perTopic.toFixed(2));
+          "
+      - name: Monthly cap leaves room for the whole round
+        run: |
+          max=$(node --input-type=module -e "import {load} from 'js-yaml'; import fs from 'node:fs'; console.log(load(fs.readFileSync('config/config.yml','utf8')).evaluation.maxUsd)")
+          npm run -s pipeline -- budget-check --usd "$max" --state state
+
+  article:
+    needs: plan
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      max-parallel: 6
+      matrix:
+        topic: ${{ fromJSON(needs.plan.outputs.matrix) }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Install Hunspell (lt_LT)
+        run: sudo apt-get update -q && sudo apt-get install -y -q hunspell hunspell-lt
+      - name: Check out the site (read-only)
+        uses: actions/checkout@v4
+        with:
+          repository: mykolas268-jpg/verslas
+          path: site
+          persist-credentials: false
+      - name: Check out state (read-only, for the monthly cap)
+        run: |
+          remote="https://github.com/${GITHUB_REPOSITORY}.git"
+          if git ls-remote --exit-code --heads "$remote" state >/dev/null 2>&1; then
+            git clone --quiet --depth 1 --branch state "$remote" state
+          fi
+      - name: Generate (dry run)
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          PIPELINE_PAUSED: ${{ vars.PIPELINE_PAUSED }}
+          PIPELINE_MAX_ARTICLE_USD: ${{ needs.plan.outputs.per_topic_usd }}
+        run: |
+          mkdir -p eval-out
+          set +e
+          npm run -s pipeline -- article --eval-topic "${{ matrix.topic }}" --site site --state state \
+            --dry-run --out eval-out --ledger-mirror eval-out/costs.jsonl 2> >(tee eval-out/log.txt >&2)
+          echo "exit code: $?"
+          exit 0
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: eval-${{ matrix.topic }}
+          path: eval-out
+          if-no-files-found: warn
+
+  report:
+    needs: [plan, article]
+    if: always() && needs.plan.result == 'success'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: write # state branch
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: eval-*
+          path: eval-in
+      - name: Check out state branch
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          remote="https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
+          if git ls-remote --exit-code --heads "$remote" state >/dev/null 2>&1; then
+            git clone --quiet --depth 1 --branch state "$remote" state
+          else
+            mkdir state && git -C state init -q -b state && git -C state remote add origin "$remote"
+          fi
+      - name: Aggregate report
+        run: npm run -s pipeline -- eval-report --in eval-in --round "${{ needs.plan.outputs.round }}" --state state
+      - name: Commit report and spend to state
+        run: |
+          cd state
+          git add -A
+          if git diff --cached --quiet; then echo "No changes"; exit 0; fi
+          git -c user.name="verslas-pipeline" -c user.email="actions@users.noreply.github.com" \
+            commit -q -m "eval: round ${{ needs.plan.outputs.round }} (run ${GITHUB_RUN_ID})"
+          git push -q origin state

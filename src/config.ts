@@ -84,6 +84,7 @@ export const ConfigSchema = z.object({
   }),
   language: z.object({ dash: z.string() }),
   houseFacts: z.array(z.string()).default([]),
+  evaluation: z.object({ maxUsd: z.number().positive() }).default({ maxUsd: 45 }),
 });
 
 export type Config = z.infer<typeof ConfigSchema>;
@@ -141,6 +142,8 @@ export interface PipelineConfig {
   glossary: Glossary;
   banned: BannedPhrase[];
   backlog: BacklogItem[];
+  /** Fixed topic set for quality evaluation (config/eval-topics.yml). */
+  evalTopics: BacklogItem[];
   neverCover: string[];
   styleGuide: string;
 }
@@ -177,6 +180,7 @@ export function loadPipelineConfig(configDir: string): PipelineConfig {
     glossary: parse(GlossarySchema, file('glossary.yml')),
     banned: parse(BannedSchema, file('banned-phrases.yml')).phrases,
     backlog: parse(BacklogSchema, file('backlog.yml')).items,
+    evalTopics: fs.existsSync(file('eval-topics.yml')) ? parse(BacklogSchema, file('eval-topics.yml')).items : [],
     neverCover: parse(NeverCoverSchema, file('never-cover.yml')).topics,
     styleGuide: fs.readFileSync(file('style-guide.lt.md'), 'utf8'),
   };

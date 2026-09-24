@@ -5,6 +5,7 @@ import { fileURLToPath } from 'node:url';
 import { runArticle } from './article.js';
 import { loadPipelineConfig } from './config.js';
 import { BudgetExceededError, CostLedger } from './costs.js';
+import { aggregateRound, renderReport } from './eval.js';
 import { AnthropicLlmClient } from './llm/anthropic.js';
 import type { LlmClient } from './llm/client.js';
 import { FixtureLlmClient } from './llm/fixture.js';
@@ -18,9 +19,12 @@ Commands
   article      Research and write one article (Phase 2, shadow mode)
                  --topic "…"          topic (or --backlog <n>)
                  --backlog <n>        use item n (1-based) from config/backlog.yml
+                 --eval-topic <n>     use item n from config/eval-topics.yml
+                 --ledger-mirror <f>  also append every cost entry to file f
                  --type guide|news|comparison   (default guide)
                  --cluster <key>      topic cluster from config/topics.yml
                  --keyword "…"        primary Lithuanian keyword
+  eval-report  Aggregate an eval round: --in <dir> --round <id> [--state <dir>]
   audit-site   Read-only live checks of the site (docs/live-site-check.sh)
   run | refresh | report   Not available yet (Phases 3–5)
 
@@ -67,8 +71,18 @@ function vilniusDate(now: Date, timeZone: string): string {
   return new Intl.DateTimeFormat('en-CA', { timeZone, year: 'numeric', month: '2-digit', day: '2-digit' }).format(now);
 }
 
+/** Environment may lower (never raise) the per-article cap, e.g. for parallel eval jobs. */
+function applyCapOverride(pc: ReturnType<typeof loadPipelineConfig>): void {
+  const override = Number(process.env.PIPELINE_MAX_ARTICLE_USD);
+  if (Number.isFinite(override) && override > 0 && override < pc.config.caps.perArticleUsd) {
+    pc.config.caps.perArticleUsd = override;
+    log.info('cap_override', { perArticleUsd: override });
+  }
+}
+
 async function commandArticle(args: Args): Promise<number> {
   const pc = loadPipelineConfig(path.join(ROOT, 'config'));
+  applyCapOverride(pc);
   const mode = (flag(args, 'mode') ?? pc.config.mode) as 'shadow' | 'approval' | 'auto';
   if (mode !== 'shadow') {
     throw new Error(`Mode "${mode}" is not available until Phase 4; only shadow mode runs now.`);
@@ -83,9 +97,12 @@ async function commandArticle(args: Args): Promise<number> {
   let clusterKey = flag(args, 'cluster');
   let keyword = flag(args, 'keyword');
   const backlogIndex = flag(args, 'backlog');
-  if (backlogIndex) {
-    const item = pc.backlog[Number(backlogIndex) - 1];
-    if (!item) throw new Error(`No backlog item ${backlogIndex} (have ${pc.backlog.length})`);
+  const evalIndex = flag(args, 'eval-topic');
+  if (backlogIndex || evalIndex) {
+    const list = evalIndex ? pc.evalTopics : pc.backlog;
+    const number = evalIndex ?? backlogIndex;
+    const item = list[Number(number) - 1];
+    if (!item) throw new Error(`No ${evalIndex ? 'eval topic' : 'backlog item'} ${number} (have ${list.length})`);
     topic = item.topic;
     type = item.type;
     clusterKey = item.cluster;
@@ -102,12 +119,26 @@ async function commandArticle(args: Args): Promise<number> {
   const stateDir = path.resolve(flag(args, 'state') ?? 'state');
   const outDir = path.resolve(flag(args, 'out') ?? path.join('out', runId));
 
-  const ledger = new CostLedger(pc.config, runId, fs.existsSync(stateDir) ? stateDir : null, { persist: !dryRun && !fixtures });
+  const mirror = flag(args, 'ledger-mirror');
+  const ledger = new CostLedger(pc.config, runId, fs.existsSync(stateDir) ? stateDir : null, {
+    persist: !dryRun && !fixtures,
+    ...(mirror ? { mirrorFile: path.resolve(mirror) } : {}),
+  });
   const llm: LlmClient = fixtures
     ? new FixtureLlmClient(path.resolve(fixtures), ledger)
     : new AnthropicLlmClient(pc.config, ledger);
 
-  const outcome = await runArticle(
+  const writeMeta = (exitCode: number, error?: string) => {
+    fs.mkdirSync(outDir, { recursive: true });
+    fs.writeFileSync(
+      path.join(outDir, 'meta.json'),
+      `${JSON.stringify({ topic, type, cluster: cluster.key, keyword: keyword ?? null, exitCode, ...(error ? { error } : {}) }, null, 2)}\n`,
+    );
+  };
+
+  let outcome;
+  try {
+    outcome = await runArticle(
     { topic, type, cluster, ...(keyword ? { keyword } : {}) },
     {
       pc,
@@ -121,6 +152,12 @@ async function commandArticle(args: Args): Promise<number> {
       checkLinks: !args.flags.has('no-link-check') && !fixtures,
     },
   );
+  } catch (error) {
+    writeMeta(1, error instanceof Error ? error.message : String(error));
+    throw error;
+  }
+  const exitCode = outcome.status === 'ready' ? 0 : outcome.status === 'failed' ? 3 : 4;
+  writeMeta(exitCode, outcome.reason);
 
   if (!dryRun && !fixtures && fs.existsSync(stateDir)) {
     const runDir = path.join(stateDir, 'runs', `${today}-${outcome.slug ?? 'aborted'}`);
@@ -143,7 +180,53 @@ async function commandArticle(args: Args): Promise<number> {
       `status=${outcome.status}\nslug=${outcome.slug ?? ''}\nout_dir=${outDir}\n`,
     );
   }
-  return outcome.status === 'ready' ? 0 : outcome.status === 'failed' ? 3 : 4;
+  return exitCode;
+}
+
+/** Exits 1 if spending `--usd` more this month would break the monthly cap. */
+function commandBudgetCheck(args: Args): number {
+  const pc = loadPipelineConfig(path.join(ROOT, 'config'));
+  const usd = Number(flag(args, 'usd') ?? '0');
+  const stateDir = path.resolve(flag(args, 'state') ?? 'state');
+  const ledger = new CostLedger(pc.config, 'budget-check', fs.existsSync(stateDir) ? stateDir : null, { persist: false });
+  const after = ledger.monthToDate + usd;
+  const ok = after <= pc.config.caps.monthlyUsd;
+  process.stdout.write(
+    `month-to-date ${ledger.monthToDate.toFixed(2)} USD + planned ${usd.toFixed(2)} USD = ${after.toFixed(2)} USD (cap ${pc.config.caps.monthlyUsd}) → ${ok ? 'OK' : 'OVER CAP'}\n`,
+  );
+  return ok ? 0 : 1;
+}
+
+function commandEvalReport(args: Args): number {
+  const inDir = path.resolve(flag(args, 'in') ?? 'eval-in');
+  const round = flag(args, 'round') ?? 'local';
+  const stateArg = flag(args, 'state');
+  const { summary, ledger } = aggregateRound(inDir, round);
+  const report = renderReport(summary);
+
+  if (stateArg) {
+    const stateDir = path.resolve(stateArg);
+    const roundDir = path.join(stateDir, 'evals', `round-${round}`);
+    fs.mkdirSync(roundDir, { recursive: true });
+    fs.writeFileSync(path.join(roundDir, 'report.md'), `${report}\n`);
+    fs.writeFileSync(path.join(roundDir, 'summary.json'), `${JSON.stringify(summary, null, 2)}\n`);
+    for (const name of fs.readdirSync(inDir)) {
+      const source = path.join(inDir, name);
+      if (!fs.statSync(source).isDirectory()) continue;
+      const target = path.join(roundDir, name.replace(/^eval-/, ''));
+      fs.mkdirSync(target, { recursive: true });
+      for (const file of fs.readdirSync(source)) {
+        if (/\.(json|jsonl|md|mdx|txt)$/.test(file)) fs.copyFileSync(path.join(source, file), path.join(target, file));
+      }
+    }
+    // Eval jobs run with --dry-run; their real spend goes into the ledger here.
+    if (ledger.length) {
+      fs.appendFileSync(path.join(stateDir, 'costs.jsonl'), ledger.map((entry) => JSON.stringify(entry)).join('\n') + '\n');
+    }
+  }
+  process.stdout.write(`${report}\n`);
+  if (process.env.GITHUB_STEP_SUMMARY) fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY, `${report}\n`);
+  return 0;
 }
 
 async function main(): Promise<number> {
@@ -156,6 +239,10 @@ async function main(): Promise<number> {
   switch (args.command) {
     case 'article':
       return commandArticle(args);
+    case 'eval-report':
+      return commandEvalReport(args);
+    case 'budget-check':
+      return commandBudgetCheck(args);
     case 'audit-site': {
       const base = flag(args, 'url') ?? 'https://verslas.ai';
       return spawnSync('bash', [path.join(ROOT, 'docs', 'live-site-check.sh'), base], { stdio: 'inherit' }).status ?? 1;

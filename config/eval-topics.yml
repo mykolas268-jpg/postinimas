@@ -1,0 +1,28 @@
+# Fixed topics for quality evaluation rounds. Keep the set stable between
+# rounds so results are comparable; change it only deliberately (and say so in
+# eval/request.yml). Mix: guides, a comparison, a legal topic, funding.
+items:
+  - topic: AI video reklama smulkiam verslui — nuo ko pradėti
+    type: guide
+    cluster: ai-video-reklama
+    keyword: AI video reklama
+  - topic: Kaip iš produkto nuotraukų sukurti reklaminį video su DI
+    type: guide
+    cluster: ai-video-reklama
+    keyword: video iš nuotraukų
+  - topic: ES dirbtinio intelekto akto 50 straipsnis — kada verslas turi žymėti DI sukurtą turinį
+    type: guide
+    cluster: di-reguliavimas
+    keyword: DI turinio žymėjimas
+  - topic: ChatGPT, Claude ir Gemini verslo planai — kainos ir lietuvių kalba
+    type: comparison
+    cluster: di-irankiai
+    keyword: DI įrankiai verslui kainos
+  - topic: Canva DI įrankiai socialinių tinklų turiniui — ką galima daryti lietuviškai
+    type: guide
+    cluster: di-rinkodara
+    keyword: Canva DI
+  - topic: Finansavimas skaitmenizacijai ir DI diegimui Lietuvoje
+    type: guide
+    cluster: finansavimas
+    keyword: finansavimas DI diegimui

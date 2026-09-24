@@ -77,6 +77,7 @@ function monthKey(date: Date): string {
 export class CostLedger {
   private readonly file: string | null;
   private readonly persist: boolean;
+  private readonly mirrorFile: string | null;
   private readonly entries: LedgerEntry[] = [];
   private monthToDateBefore = 0;
   private alerted = new Set<number>();
@@ -86,15 +87,22 @@ export class CostLedger {
    *   null means no history (tests).
    * @param persist append new entries to costs.jsonl; false for dry runs,
    *   which still enforce every cap in memory.
+   * @param mirrorFile also append every entry here as it happens (eval runs
+   *   collect spend from their artifacts, even if the run later crashes).
    */
   constructor(
     private readonly config: Config,
     private readonly runId: string,
     stateDir: string | null,
-    { persist = true, now = new Date() }: { persist?: boolean; now?: Date } = {},
+    {
+      persist = true,
+      now = new Date(),
+      mirrorFile = null,
+    }: { persist?: boolean; now?: Date; mirrorFile?: string | null } = {},
   ) {
     this.file = stateDir ? path.join(stateDir, 'costs.jsonl') : null;
     this.persist = persist;
+    this.mirrorFile = mirrorFile;
     const source = this.file;
     if (source && fs.existsSync(source)) {
       const month = monthKey(now);
@@ -167,6 +175,10 @@ export class CostLedger {
     if (this.file && this.persist) {
       fs.mkdirSync(path.dirname(this.file), { recursive: true });
       fs.appendFileSync(this.file, `${JSON.stringify(entry)}\n`);
+    }
+    if (this.mirrorFile) {
+      fs.mkdirSync(path.dirname(this.mirrorFile), { recursive: true });
+      fs.appendFileSync(this.mirrorFile, `${JSON.stringify(entry)}\n`);
     }
     log.info('cost', { step, model: usage.model, usd: entry.usd, runTotal: this.runTotal });
 

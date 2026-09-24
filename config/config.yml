@@ -90,3 +90,8 @@ language:
 # them. Keep in sync with the site.
 houseFacts:
   - "verslas.ai kuria reklaminius video verslui: 20–30 sek. klipas už 99 €, paruošiamas per 4 darbo dienas, įskaičiuotas vienas taisymų ratas, subtitrai lietuviškai."
+
+# Quality evaluation (npm run pipeline -- eval-report; .github/workflows/eval.yml).
+# Each article still has the per-article cap; this caps one whole eval round.
+evaluation:
+  maxUsd: 45
