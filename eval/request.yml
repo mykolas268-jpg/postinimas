@@ -4,4 +4,4 @@
 # report is committed to the `state` branch under evals/round-<round>/.
 round: 2
 topics: all
-note: First real run — length-variant chooser, keyword tolerance, number rule in the writer prompt.
+note: First real run — length-variant chooser, keyword tolerance, number rule in the writer prompt. (Push retry 14:15 UTC — schedule not firing.)
