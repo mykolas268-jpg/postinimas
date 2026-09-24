@@ -179,6 +179,12 @@ export class AnthropicLlmClient implements LlmClient {
       if (message.stop_reason === 'refusal') {
         throw new Error(`${call.step}: model refused (${JSON.stringify(message.stop_details ?? null)})`);
       }
+      if (message.stop_reason === 'max_tokens') {
+        // The notes so far are still usable evidence; the fact sheet step and the
+        // provenance gate decide whether they are enough. Make the cut visible.
+        log.warn('research_truncated', { turn, maxTokens: call.maxTokens, sources: seen.size });
+        notes.push('\n[Research notes were cut off at the output limit.]');
+      }
       break;
     }
 

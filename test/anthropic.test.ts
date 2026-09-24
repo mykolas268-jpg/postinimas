@@ -54,6 +54,20 @@ describe('research loop', () => {
     expect(result.seen.map((source) => source.url)).toContain('https://a.lt/1');
   });
 
+  it('keeps research notes cut off at max_tokens but marks them', async () => {
+    const { client } = fakeClient([
+      {
+        stop_reason: 'max_tokens',
+        content: [{ type: 'text', text: 'partial notes', citations: null }] as unknown as Anthropic.ContentBlock[],
+        usage: { input_tokens: 1000, output_tokens: 100, cache_creation_input_tokens: 0, cache_read_input_tokens: 0, server_tool_use: null } as unknown as Anthropic.Usage,
+      },
+    ]);
+    const ledger = new CostLedger(config, 'test', null, { persist: false });
+    const result = await new AnthropicLlmClient(config, ledger, client).research(researchCall);
+    expect(result.notes).toContain('partial notes');
+    expect(result.notes).toMatch(/cut off/);
+  });
+
   it('resumes pause_turn until the model finishes when within budget', async () => {
     const cheap = (stop: 'pause_turn' | 'end_turn'): Partial<Anthropic.Message> => ({
       stop_reason: stop,

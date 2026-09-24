@@ -27,6 +27,8 @@ export interface TopicResult {
   finalClaimStats: Record<string, number> | null;
   hunspellUnknown: number;
   editorUncertainties: number;
+  /** Unreadable lines in the job's cost mirror (their spend is not counted). */
+  ledgerBadLines: number;
 }
 
 function readJson<T>(file: string): T | null {
@@ -37,13 +39,26 @@ function readJson<T>(file: string): T | null {
   }
 }
 
-function readLedger(file: string): LedgerEntry[] {
-  if (!fs.existsSync(file)) return [];
-  return fs
-    .readFileSync(file, 'utf8')
-    .split('\n')
-    .filter((line) => line.trim())
-    .map((line) => JSON.parse(line) as LedgerEntry);
+/**
+ * Reads a job's cost mirror. A malformed line (e.g. a job killed mid-write)
+ * is skipped and counted rather than thrown: a crash here would lose the whole
+ * round's spend from state/costs.jsonl, which the monthly cap relies on.
+ */
+export function readLedger(file: string): { entries: LedgerEntry[]; badLines: number } {
+  if (!fs.existsSync(file)) return { entries: [], badLines: 0 };
+  const entries: LedgerEntry[] = [];
+  let badLines = 0;
+  for (const line of fs.readFileSync(file, 'utf8').split('\n')) {
+    if (!line.trim()) continue;
+    try {
+      const entry = JSON.parse(line) as LedgerEntry;
+      if (typeof entry.usd !== 'number' || typeof entry.ts !== 'string') throw new Error('bad entry');
+      entries.push(entry);
+    } catch {
+      badLines += 1;
+    }
+  }
+  return { entries, badLines };
 }
 
 export function collectTopic(dir: string, index: string): TopicResult {
@@ -55,7 +70,7 @@ export function collectTopic(dir: string, index: string): TopicResult {
   const factSheet = readJson<FactSheet>(path.join(dir, 'fact-sheet.json'));
   const rawFactSheet = readJson<FactSheet>(path.join(dir, 'fact-sheet.raw.json'));
   const editor = readJson<{ uncertainties: string[] }>(path.join(dir, 'editor.json'));
-  const ledger = readLedger(path.join(dir, 'costs.jsonl'));
+  const { entries: ledger, badLines } = readLedger(path.join(dir, 'costs.jsonl'));
 
   let status: TopicResult['status'] = summary?.status ?? 'error';
   let reason = '';
@@ -101,6 +116,7 @@ export function collectTopic(dir: string, index: string): TopicResult {
     finalClaimStats,
     hunspellUnknown: lt ? lt.warnings.filter((warning) => warning.startsWith('Hunspell')).length : 0,
     editorUncertainties: editor?.uncertainties.length ?? 0,
+    ledgerBadLines: badLines,
   };
 }
 
@@ -153,6 +169,10 @@ export function renderReport(summary: EvalSummary): string {
     `- First-attempt pass rate: ${pct(summary.firstAttemptPassRate)}`,
     `- Claim accuracy of fact-checked final drafts: ${summary.finalClaimAccuracy === null ? 'n/a' : pct(summary.finalClaimAccuracy)}`,
     `- Cost: ${summary.totalCostUsd} USD total, ${summary.avgCostPerTopicUsd} USD per topic`,
+    ...(() => {
+      const bad = summary.results.reduce((sum, result) => sum + result.ledgerBadLines, 0);
+      return bad ? [`- **Warning:** ${bad} unreadable cost-ledger line(s) skipped — real spend is higher than shown.`] : [];
+    })(),
     '',
     '| # | Topic | Status | Attempts | Words | Claims (kept/demoted) | 1st-attempt failures | Hunspell unknown | Editor doubts | USD |',
     '|---|---|---|---|---|---|---|---|---|---|',
@@ -181,6 +201,6 @@ export function aggregateRound(inDir: string, round: string): { summary: EvalSum
     .filter((name) => fs.statSync(path.join(inDir, name)).isDirectory())
     .sort((a, b) => a.localeCompare(b, 'en', { numeric: true }));
   const results = dirs.map((name) => collectTopic(path.join(inDir, name), name.replace(/^eval-/, '')));
-  const ledger = dirs.flatMap((name) => readLedger(path.join(inDir, name, 'costs.jsonl')));
+  const ledger = dirs.flatMap((name) => readLedger(path.join(inDir, name, 'costs.jsonl')).entries);
   return { summary: summarize(round, results), ledger };
 }

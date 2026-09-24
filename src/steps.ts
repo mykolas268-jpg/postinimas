@@ -15,6 +15,14 @@ import {
 import type { RegistryEntry } from './site/registry.js';
 
 /**
+ * Output token ceilings. Thinking counts toward them and cannot be disabled on
+ * the writer/editor model (only effort controls it), so they are generous:
+ * hitting one throws and loses the article, while unused headroom costs
+ * nothing (the budget guard prices the worst case before each call).
+ */
+const MAX_TOKENS = { research: 32_000, factsheet: 32_000, write: 64_000, edit: 64_000, factcheck: 32_000 } as const;
+
+/**
  * One function per model step. Static instructions (prompt files, style
  * guide, glossary, banned phrases) form the system prompt so they are cached;
  * everything that varies per article goes in the user message.
@@ -78,7 +86,7 @@ export async function research(
     ]
       .filter(Boolean)
       .join('\n\n'),
-    maxTokens: 16_000,
+    maxTokens: MAX_TOKENS.research,
     maxSearches: config.research.maxSearches,
     maxFetches: config.research.maxFetches,
     fetchMaxContentTokens: config.research.fetchMaxContentTokens,
@@ -105,7 +113,7 @@ export async function buildFactSheet(
       `URLs retrieved during research (the only URLs you may cite):\n${notes.seen.map((source) => `- ${source.url}`).join('\n')}`,
       `Research notes:\n\n${notes.notes}`,
     ].join('\n\n'),
-    maxTokens: 16_000,
+    maxTokens: MAX_TOKENS.factsheet,
     schema: FactSheetSchema,
     article: ctx.article,
   });
@@ -163,7 +171,7 @@ export async function write(ctx: StepContext, input: WriterInput): Promise<Draft
     effort: config.effort.writer,
     system: prompt(ctx, 'writer') + languageReference(ctx),
     user: parts.join('\n\n'),
-    maxTokens: 32_000,
+    maxTokens: MAX_TOKENS.write,
     schema: DraftSchema,
     article: ctx.article,
   });
@@ -185,7 +193,7 @@ export async function edit(ctx: StepContext, draft: Draft): Promise<EditorOutput
       bodyMdx: draft.bodyMdx,
       faq: draft.faq,
     })}`,
-    maxTokens: 32_000,
+    maxTokens: MAX_TOKENS.edit,
     schema: EditorSchema,
     article: ctx.article,
   });
@@ -203,7 +211,7 @@ export async function factCheck(
     effort: config.effort.factcheck,
     system: prompt(ctx, 'factcheck'),
     user: `Fact sheet:\n${json(factSheet.claims)}\n\nHouse facts (id "HOUSE"):\n${json(config.houseFacts)}\n\nArticle:\n${json(article)}`,
-    maxTokens: 16_000,
+    maxTokens: MAX_TOKENS.factcheck,
     schema: FactCheckSchema,
     article: ctx.article,
   });

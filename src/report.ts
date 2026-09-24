@@ -95,7 +95,7 @@ export function buildPrBody(input: ReportInput): string {
   const risks = [
     ...input.factSheet.conflicts.map((conflict) => `Šaltiniai nesutaria: ${conflict.description}`),
     ...input.factSheet.unknowns.slice(0, 12).map((unknown) => `Nepatvirtinta: ${unknown}`),
-    ...(input.demotedClaims > 0 ? [`${input.demotedClaims} teiginiai atmesti dėl nepakankamų šaltinių.`] : []),
+    ...(input.demotedClaims > 0 ? [`Atmesta teiginių dėl nepakankamų šaltinių: ${input.demotedClaims}.`] : []),
   ];
   out.push(...(risks.length ? risks.map((risk) => `- ${risk}`) : ['- Nėra.']), '');
 

@@ -23,14 +23,14 @@ describe('eval aggregation', () => {
       'gates.json': [gate('seo', true)],
       'attempt-1.gates.json': [gate('seo', true)],
       'factcheck.json': { claims: [{ status: 'supported' }, { status: 'supported' }, { status: 'opinion' }] },
-      'costs.jsonl': `${JSON.stringify({ usd: 2.5 })}\n`,
+      'costs.jsonl': `${JSON.stringify({ ts: '2026-09-24T10:00:00Z', usd: 2.5 })}\n`,
     });
     topicDir(root, 'eval-2', {
       'meta.json': { topic: 'B', exitCode: 3 },
       'summary.json': { status: 'failed', attempts: 3, articleFile: 'b.mdx' },
       'gates.json': [gate('lithuanian', false)],
       'attempt-1.gates.json': [gate('lithuanian', false), gate('seo', false)],
-      'costs.jsonl': `${JSON.stringify({ usd: 4 })}\n`,
+      'costs.jsonl': `${JSON.stringify({ ts: '2026-09-24T10:00:00Z', usd: 4 })}\n{"ts": "2026-09-24T10:01:00Z", "usd": 1.2`,
     });
     topicDir(root, 'eval-3', { 'meta.json': { topic: 'C', exitCode: 1, error: 'auth' } });
 
@@ -43,5 +43,8 @@ describe('eval aggregation', () => {
     expect(summary.results.map((result) => result.status)).toEqual(['ready', 'failed', 'error']);
     expect(summary.results[1]!.firstAttemptFailures).toEqual({ lithuanian: 1, seo: 1 });
     expect(renderReport(summary)).toContain('Pass rate (all gates): 33 %');
+    // A job killed mid-write leaves a truncated line: skipped, counted, flagged — not a crash.
+    expect(summary.results[1]!.ledgerBadLines).toBe(1);
+    expect(renderReport(summary)).toMatch(/1 unreadable cost-ledger line/);
   });
 });
