@@ -33,8 +33,10 @@ what to wait for / what to ignore" analysis, and honest limitations and risks.
    descriptive Lithuanian anchor text. At most one short quote (under 15
    words) per source, in „…“ with attribution.
 7. Internal links: link to 1–3 of the provided existing articles where
-   genuinely relevant, using descriptive anchor text. Link to service pages
-   only as given in the CTA hint.
+   genuinely relevant, using descriptive anchor text. If any article is
+   marked `sameCluster: true`, linking at least one of them is required (code
+   checks it). Do not force links to unrelated articles. Link to service
+   pages only as given in the CTA hint.
 8. Follow the style guide exactly (typography, terminology, sentence-case
    headings, absolute dates only, no hype, no emojis in headings).
 

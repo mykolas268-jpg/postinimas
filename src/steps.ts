@@ -133,7 +133,12 @@ export async function write(ctx: StepContext, input: WriterInput): Promise<Draft
     secondaryKeywords: factSheet.secondaryKeywords,
     readerQuestions: factSheet.questions,
     isLegalTopic: factSheet.isLegalTopic || request.cluster.legal,
-    existingArticles: input.registry.map((entry) => ({ url: `/straipsniai/${entry.slug}`, title: entry.title, excerpt: entry.excerpt })),
+    existingArticles: input.registry.map((entry) => ({
+      url: `/straipsniai/${entry.slug}`,
+      title: entry.title,
+      excerpt: entry.excerpt,
+      sameCluster: entry.cluster === request.cluster.key,
+    })),
     houseFacts: config.houseFacts,
     factSheet: {
       claims: factSheet.claims,

@@ -23,6 +23,8 @@ export interface SeoInput {
   faq: { q: string; a: string }[];
   type: 'guide' | 'news' | 'comparison';
   primaryKeyword: string;
+  /** Topic cluster key; links are required only to articles of the same cluster. */
+  cluster?: string;
 }
 
 /** Pages an article may link to besides other articles. */
@@ -95,9 +97,16 @@ export function checkSeo(input: SeoInput, config: Config, registry: RegistryEntr
     }
   }
   const articleLinks = new Set(internal.filter((url) => known.has(url)));
-  const required = Math.min(writing.internalLinks.min, registry.length);
+  // Only same-cluster articles make a link mandatory: with a small site, forcing a
+  // link from an EU AI Act article to a video price guide makes the article worse.
+  const related = registry.filter((entry) => input.cluster !== undefined && entry.cluster === input.cluster);
+  const required = Math.min(writing.internalLinks.min, related.length);
   if (articleLinks.size < required) {
-    errors.push(`Per mažai nuorodų į kitus straipsnius (${articleLinks.size}, reikia ≥ ${required}).`);
+    errors.push(
+      `Per mažai nuorodų į kitus straipsnius (${articleLinks.size}, reikia ≥ ${required}); tos pačios temos: ${related.map((entry) => `/straipsniai/${entry.slug}`).join(', ')}.`,
+    );
+  } else if (articleLinks.size === 0 && registry.length > 0) {
+    warnings.push('Nėra nuorodų į kitus straipsnius — pridėk, jei kuris nors tikrai susijęs.');
   }
   if (new Set(internal).size > writing.internalLinks.max) {
     warnings.push(`Daug vidinių nuorodų (${new Set(internal).size}).`);

@@ -73,6 +73,9 @@ before the fix and covered by a test:
 | `?uri=CELEX:…` vs `CELEX%3A…`, http vs https, `/a/?x` vs `/a?x` treated as different URLs (facts from EUR-Lex could be dropped as "not retrieved") | false positive | URL comparison key re-serialises the query and path |
 | `banned-phrases.yml`: an unquoted comma banned the plain word "nesvarbu" (meant: "nesvarbu, ar esate") and truncated "pilnai" advice | config bug | quoted; config schema is now strict, so this fails at load |
 | Owner-facing messages: "į angliškų sakinį", number agreement ("1 punktai"), English provenance messages | language | fixed; provenance messages in Lithuanian |
+| A required internal link to *any* existing article: with only two video articles, an EU AI Act or funding article had to link to a video price guide, while the prompt said "only where genuinely relevant" | prompt/gate mismatch | a link is required only when a same-cluster article exists (the writer sees `sameCluster`); otherwise a warning. Site PR #2 sets `cluster: ai-video-reklama` on both video articles |
+| Relative time words and straight quotes inside „…“ quotations passed our gate but fail the site's `check:content --strict` in verify | missed error | both rules now also read the body with quotations |
+| `eval.yml` cloned `state` and the site without a token — breaks as soon as the repos are made private (A1) | workflow bug | authenticated remotes; site checkout uses `SITE_REPO_TOKEN` like `article.yml` |
 
 Not changed on purpose: the H1 keyword check still requires the keyword's
 own words ("žymėti" does not count for "žymėjimas"). That is an SEO rule,

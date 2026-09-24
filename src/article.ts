@@ -129,7 +129,7 @@ export async function runArticle(request: ArticleRequest, options: ArticleRunOpt
         { glossary: pc.glossary, banned: pc.banned, dash: config.language.dash, ...(options.spellcheck ? { spellcheck: options.spellcheck } : {}) },
       ),
       checkSeo(
-        { title: edited.title, seoTitle: edited.seoTitle, slug, excerpt: edited.excerpt, body: edited.bodyMdx, faq: edited.faq, type: request.type, primaryKeyword },
+        { title: edited.title, seoTitle: edited.seoTitle, slug, excerpt: edited.excerpt, body: edited.bodyMdx, faq: edited.faq, type: request.type, primaryKeyword, cluster: request.cluster.key },
         config,
         registry,
       ),

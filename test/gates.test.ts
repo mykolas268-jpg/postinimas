@@ -40,6 +40,12 @@ describe('Lithuanian gate', () => {
     expect(lt('Nesvarbu, ar esate kavinė, ar parduotuvė.').errors.join()).toMatch(/nesvarbu, ar esate/);
   });
 
+  // Mirrors the site's check:content --strict, which does not exempt quotations.
+  it('flags relative time words and straight quotes even inside quotations', () => {
+    expect(lt('Agentūros sako: „reikia rytoj“.').errors.join()).toMatch(/Santykinis laikas „rytoj“ citatoje/);
+    expect(lt('Citata: „tai "geriausias" įrankis“.').errors.join()).toMatch(/Tiesios kabutės/);
+  });
+
   it('ignores quoted text and code', () => {
     expect(lt('Frazė „pilnai sutinku“ yra klaida.\n\n```text\nThis is the prompt for the model.\n```').errors).toEqual([]);
   });
@@ -199,6 +205,16 @@ describe('SEO gate', () => {
     [{ faq: [] }, /DUK/],
   ])('flags %o', (patch, pattern) => {
     expect(checkSeo({ ...base, ...patch }, config, registry).errors.join('\n')).toMatch(pattern);
+  });
+
+  it('requires internal links only to articles of the same cluster', () => {
+    const noLinks = { ...base, body: body.replace(/\[([^\]]*)\]\(\/straipsniai\/reklaminis-video-kaina\)/g, '$1') };
+    expect(noLinks.body).not.toMatch(/\/straipsniai\//);
+    const sameCluster = [{ ...registry[0]!, cluster: 'ai-video-reklama' }];
+    expect(checkSeo({ ...noLinks, cluster: 'ai-video-reklama' }, config, sameCluster).errors.join()).toMatch(/Per mažai nuorodų.*reklaminis-video-kaina/);
+    const other = checkSeo({ ...noLinks, cluster: 'di-reguliavimas' }, config, sameCluster);
+    expect(other.errors.join()).not.toMatch(/Per mažai nuorodų/);
+    expect(other.warnings.join()).toMatch(/Nėra nuorodų į kitus straipsnius/);
   });
 
   it('builds inflection-tolerant keyword stems', () => {

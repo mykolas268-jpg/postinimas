@@ -36,6 +36,7 @@ jobs:
         env:
           KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           EVENT: ${{ github.event_name }}
+          GH_TOKEN: ${{ github.token }}
         run: |
           if [ -z "$KEY" ]; then
             if [ "$EVENT" = "schedule" ]; then
@@ -46,7 +47,7 @@ jobs:
             exit 1
           fi
           round=$(sed -n 's/^round:[[:space:]]*//p' eval/request.yml | head -n1)
-          remote="https://github.com/${GITHUB_REPOSITORY}.git"
+          remote="https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
           if [ "$EVENT" = "schedule" ] && git ls-remote --exit-code --heads "$remote" state >/dev/null 2>&1; then
             git clone --quiet --depth 1 --branch state "$remote" /tmp/state-probe
             if [ -f "/tmp/state-probe/evals/round-${round}/report.md" ]; then
@@ -64,8 +65,10 @@ jobs:
         run: npm ci
       - name: Check out state (read-only)
         if: steps.gate.outputs.go == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
-          remote="https://github.com/${GITHUB_REPOSITORY}.git"
+          remote="https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
           if git ls-remote --exit-code --heads "$remote" state >/dev/null 2>&1; then
             git clone --quiet --depth 1 --branch state "$remote" state
           fi
@@ -118,10 +121,14 @@ jobs:
         with:
           repository: mykolas268-jpg/verslas
           path: site
+          # Needed once the site repo is private (github.token only reaches this repo).
+          token: ${{ secrets.SITE_REPO_TOKEN || github.token }}
           persist-credentials: false
       - name: Check out state (read-only, for the monthly cap)
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
-          remote="https://github.com/${GITHUB_REPOSITORY}.git"
+          remote="https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
           if git ls-remote --exit-code --heads "$remote" state >/dev/null 2>&1; then
             git clone --quiet --depth 1 --branch state "$remote" state
           fi

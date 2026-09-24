@@ -113,8 +113,12 @@ export function checkLithuanian(input: LithuanianInput, options: LithuanianOptio
   const allProse = [input.title, input.seoTitle, input.excerpt, prose(input.body), faqText].join('\n\n');
   const styleText = withoutQuotations(allProse);
 
+  // The site's `check:content --strict` (verify job) reads the body with quotations
+  // included, so these two rules must too, or a passing article fails in verify.
+  const bodyWithQuotes = prose(input.body);
+
   // Typography -------------------------------------------------------------
-  if (/"/.test(styleText)) errors.push('Tiesios kabutės " — naudok „…“.');
+  if (/"/.test(styleText) || /"/.test(bodyWithQuotes)) errors.push('Tiesios kabutės " — naudok „…“ (ir citatose).');
   if (/[”]/.test(allProse) || /(^|[\s(])“/m.test(allProse)) {
     errors.push('Angliškos kabutės “…” / ” — naudok lietuviškas „…“.');
   }
@@ -125,7 +129,11 @@ export function checkLithuanian(input: LithuanianInput, options: LithuanianOptio
   const month = styleText.match(EN_MONTHS);
   if (month) errors.push(`Angliškas mėnesio pavadinimas „${month[0]}“.`);
   const relative = styleText.match(RELATIVE_TIME);
+  const quotedRelative = bodyWithQuotes.match(RELATIVE_TIME);
   if (relative) errors.push(`Santykinis laikas „${relative[0]}“ — nurodyk konkrečią datą.`);
+  else if (quotedRelative) {
+    errors.push(`Santykinis laikas „${quotedRelative[0]}“ citatoje — svetainės patikra jo neleidžia; perfrazuok arba rinkis kitą citatą.`);
+  }
   const currency = styleText.match(/(€|\$|\bEUR|\bUSD)\s?\d/);
   if (currency) errors.push(`Valiuta prieš skaičių „${currency[0]}…“ — rašyk „20 €“, „20 USD“.`);
   const percent = styleText.match(/\d%/);
