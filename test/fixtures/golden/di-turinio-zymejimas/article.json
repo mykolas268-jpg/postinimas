@@ -1,0 +1,20 @@
+{
+  "title": "DI turinio žymėjimas: ką verslui reiškia DI akto 50 straipsnis",
+  "seoTitle": "DI turinio žymėjimas: DI akto 50 straipsnis verslui",
+  "slug": "di-turinio-zymejimas-50-straipsnis",
+  "excerpt": "Nuo 2026 m. rugpjūčio 2 d. DI sukurtą turinį kai kuriais atvejais reikės žymėti. Kas tai privalo daryti, kokios išimtys ir baudos, ką daryti jau dabar.",
+  "type": "guide",
+  "cluster": "di-reguliavimas",
+  "keyword": "DI turinio žymėjimas",
+  "legal": true,
+  "sourceUrls": [
+    "https://eur-lex.europa.eu/legal-content/LT/TXT/?uri=CELEX:32024R1689",
+    "https://digital-strategy.ec.europa.eu/en/policies/regulatory-framework-ai"
+  ],
+  "faq": [
+    { "q": "Nuo kada reikia žymėti DI sukurtą turinį?", "a": "DI akto 50 straipsnio skaidrumo pareigos taikomos nuo 2026 m. rugpjūčio 2 d." },
+    { "q": "Ar reikia žymėti DI parašytus reklamos tekstus?", "a": "50 straipsnio teksto pareiga taikoma tekstams, kuriais visuomenė informuojama viešojo intereso klausimais. Mūsų vertinimu, įprasti reklamos tekstai tokie nėra, tačiau ribiniais atvejais pasitarkite su teisininku." },
+    { "q": "Kokia bauda gresia už nepažymėtą DI turinį?", "a": "Už 50 straipsnio pažeidimus gali būti skiriama bauda iki 15 mln. € arba iki 3 % pasaulinės metinės apyvartos. Mažoms ir vidutinėms įmonėms taikoma mažesnė iš šių sumų." },
+    { "q": "Ar reikia žymėti tekstą, kurį peržiūrėjo žmogus?", "a": "Ne, jei tekstą peržiūrėjo ar redagavo žmogus ir konkretus asmuo ar įmonė prisiima redakcinę atsakomybę už jo paskelbimą." }
+  ]
+}

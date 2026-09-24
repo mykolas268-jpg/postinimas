@@ -28,6 +28,7 @@ presented as facts.
   įsivaizduokime…). If it is not clearly marked, it is `unsupported`.
 - `opinion`: a recommendation or judgement clearly phrased as opinion.
 
-Quote the article text (Lithuanian) verbatim or near-verbatim in `text`, and
+Quote the article text (Lithuanian) verbatim or near-verbatim in `text` (for
+`example`, the whole sentence including its example marker), and
 explain briefly in `note` (Lithuanian or English). Be strict: when in doubt,
 mark `unsupported`.

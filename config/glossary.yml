@@ -36,6 +36,13 @@ spelling:
     - chatbot
     - skaitmeniz  # skaitmenizacija…
     - generatori
+    # Correct terms missing from hunspell-lt that sit one letter from another
+    # word, so the gate called them typos (found by test/golden.test.ts):
+    - startuol    # startuolis (VLKK term for start-up) ≠ spartuolis
+    - debesij     # debesija (cloud computing) ≠ tebesijos
+    - neuronin    # neuroninis tinklas ≠ neuraninis
+    - analitik    # analitika ≠ analitikai
+    - naujienlaišk # naujienlaiškis (newsletter)
   words:
     - AI
     - DI
@@ -86,5 +93,6 @@ spelling:
     - DaVinci
     - Resolve
     - Vercel
+    - Lex         # EUR-Lex
     - verslas
     - Callout

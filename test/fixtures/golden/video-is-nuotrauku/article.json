@@ -1,0 +1,23 @@
+{
+  "title": "Video iš nuotraukų: kaip sukurti reklaminį klipą su DI",
+  "seoTitle": "Video iš nuotraukų: reklaminis klipas su DI",
+  "slug": "video-is-nuotrauku-su-di",
+  "excerpt": "Kaip iš produkto nuotraukų sukurti reklaminį video su DI: kokias nuotraukas rinktis, kaip aprašyti judesį, kiek kainuoja įrankis ir ar jis veikia Lietuvoje.",
+  "type": "guide",
+  "cluster": "ai-video-reklama",
+  "keyword": "video iš nuotraukų",
+  "legal": false,
+  "sourceUrls": [
+    "https://example.com/blog/examplevideo-2",
+    "https://example.com/pricing",
+    "https://example.com/help/availability",
+    "https://example.com/help/subtitles",
+    "https://example.com/privacy"
+  ],
+  "faq": [
+    { "q": "Kiek kainuoja ExampleVideo?", "a": "„Pro“ planas kainuoja 20 USD per mėnesį. Nemokamą planą galima išbandyti, bet jo klipuose lieka vandens ženklas." },
+    { "q": "Ar ExampleVideo veikia Lietuvoje?", "a": "Taip, ExampleVideo prieinamas ES, įskaitant Lietuvą." },
+    { "q": "Ar ExampleVideo moka lietuviškai?", "a": "Sąsaja yra tik anglų kalba, tačiau subtitrus galima sugeneruoti 30 kalbų, tarp jų ir lietuvių." },
+    { "q": "Kokio ilgio klipus galima sukurti iš nuotraukų?", "a": "ExampleVideo 2.0 iš nuotraukų kuria iki 60 sekundžių klipus." }
+  ]
+}

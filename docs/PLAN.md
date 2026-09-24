@@ -79,6 +79,19 @@ before the fix and covered by a test:
 | The hourly schedule re-ran any round without a report — a failed report step would have re-run (and re-paid, ~45 USD) the round every hour until the monthly cap | cost risk | the plan job writes `evals/round-<n>/started.json` before any spend (fails closed); the schedule never re-runs a started round; a push of `eval/request.yml` still retries explicitly |
 | Research spend was checked once (3 USD estimate) before up to 7 `pause_turn` requests; `max_uses` is documented per request, and every continuation re-sends the growing context | cost risk | the loop re-checks the recorded spend before each continuation, stops at `research.worstCaseUsd` and keeps what it has; the per-article/monthly caps still throw |
 
+Golden articles (`test/golden.test.ts`, `test/fixtures/golden/`): two
+hand-checked, full-length articles in the pipeline's output format — the EU
+AI Act Article 50 guide (legal, real facts from Regulation 2024/1689) and a
+photo-to-video guide (built on the fictional ExampleVideo test product, with
+English prompts and camera terms). Every deterministic gate must pass them
+with zero errors, and both pass the site's `check:content --strict` and
+`npm run build`. Writing them found two more false positives: correct terms
+missing from hunspell-lt that sit one letter from another word
+(„startuolis“, „debesija“, „neuroninis“, „analitika“ — now whitelisted), and
+fact-check example quotes that omit the marker (examples are now judged on
+the article sentence). Any future gate change that fails a good article
+fails CI.
+
 Not changed on purpose: the H1 keyword check still requires the keyword's
 own words ("žymėti" does not count for "žymėjimas"). That is an SEO rule,
 not a false positive; the writer prompt now says so explicitly.

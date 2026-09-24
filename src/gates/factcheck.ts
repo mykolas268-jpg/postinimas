@@ -77,6 +77,23 @@ export function unsupportedNumbers(text: string, factSheet: FactSheet, houseFact
   return problems;
 }
 
+/**
+ * The article sentence a fact-check quote came from: the checker may quote
+ * only part of a sentence ("kavinė sutaupytų 5 val." from "Pavyzdžiui, kavinė
+ * sutaupytų 5 val."), so example markers are judged on the article itself.
+ */
+export function sourceSentence(quote: string, articleSentences: string[]): string | null {
+  const quoteWords = (quote.toLowerCase().match(/[\p{L}\p{N}]{3,}/gu) ?? []);
+  if (quoteWords.length === 0) return null;
+  let best: { sentence: string; share: number } | null = null;
+  for (const sentence of articleSentences) {
+    const lower = sentence.toLowerCase();
+    const share = quoteWords.filter((word) => lower.includes(word)).length / quoteWords.length;
+    if (!best || share > best.share) best = { sentence, share };
+  }
+  return best && best.share >= 0.8 ? best.sentence : null;
+}
+
 export function checkFactCheck(
   result: FactCheckOutput,
   factSheet: FactSheet,
@@ -86,6 +103,7 @@ export function checkFactCheck(
   const errors: string[] = [];
   const warnings: string[] = [];
   const claimIds = new Set(factSheet.claims.map((claim) => claim.id));
+  const articleSentences = sentences(prose(text));
 
   for (const claim of result.claims) {
     switch (claim.status) {
@@ -95,11 +113,13 @@ export function checkFactCheck(
       case 'contradicted':
         errors.push(`Teiginys prieštarauja šaltiniams: „${claim.text}“ — ${claim.note}`);
         break;
-      case 'example':
-        if (!EXAMPLE_MARKERS.test(claim.text)) {
+      case 'example': {
+        const sentence = sourceSentence(claim.text, articleSentences);
+        if (!EXAMPLE_MARKERS.test(claim.text) && !(sentence && EXAMPLE_MARKERS.test(sentence))) {
           errors.push(`Pavyzdys aiškiai nepažymėtas kaip pavyzdys: „${claim.text}“`);
         }
         break;
+      }
       case 'opinion':
         warnings.push(`Nuomonė: „${claim.text}“`);
         break;

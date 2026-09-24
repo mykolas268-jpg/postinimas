@@ -248,6 +248,19 @@ describe('fact-check gate', () => {
     expect(unsupportedNumbers('Kaina — 1 300,50 €.', sheet('Costs EUR 1,200.50.'))).toHaveLength(1);
   });
 
+  // The checker may quote only the clause after the marker; the article sentence decides.
+  it('judges example markers on the article sentence, not the checker quote', () => {
+    const run = (body: string) =>
+      checkFactCheck(
+        { claims: [{ text: 'kavinė per savaitę sutaupytų kelias valandas', kind: 'other', claimIds: [], status: 'example', note: '' }] },
+        factSheet,
+        body,
+      ).errors.filter((error) => /Pavyzdys/.test(error));
+    expect(run('Pavyzdžiui, kavinė per savaitę sutaupytų kelias valandas.')).toEqual([]);
+    expect(run('Kavinė per savaitę sutaupytų kelias valandas.')).toHaveLength(1);
+    expect(run('Visai kitas tekstas be šio sakinio.')).toHaveLength(1);
+  });
+
   it('fails on unsupported, contradicted and unmarked examples', () => {
     const result = checkFactCheck(
       {
