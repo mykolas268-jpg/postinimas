@@ -1,0 +1,4 @@
+{"ts":"2026-09-24T09:15:33.194Z","level":"info","run":"local","event":"cap_override","perArticleUsd":7.5}
+{"ts":"2026-09-24T09:15:33.720Z","level":"info","run":"gh-35980036761","event":"article_start","topic":"Finansavimas skaitmenizacijai ir DI diegimui Lietuvoje","type":"guide","cluster":"finansavimas","similar":{"slug":"reklaminis-video-kaina","title":"Kiek kainuoja reklaminis video verslui? Realios 2026 m. kainos","score":0.043478260869565216}}
+{"ts":"2026-09-24T09:15:33.808Z","level":"error","run":"gh-35980036761","event":"fatal","message":"Could not resolve authentication method. Expected one of apiKey, authToken, credentials, config, or profile to be set. Or for one of the \"X-Api-Key\" or \"Authorization\" headers to be explicitly omitted"}
+Could not resolve authentication method. Expected one of apiKey, authToken, credentials, config, or profile to be set. Or for one of the "X-Api-Key" or "Authorization" headers to be explicitly omitted

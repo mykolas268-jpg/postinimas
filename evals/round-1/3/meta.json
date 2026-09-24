@@ -1,0 +1,8 @@
+{
+  "topic": "ES dirbtinio intelekto akto 50 straipsnis — kada verslas turi žymėti DI sukurtą turinį",
+  "type": "guide",
+  "cluster": "di-reguliavimas",
+  "keyword": "DI turinio žymėjimas",
+  "exitCode": 1,
+  "error": "Could not resolve authentication method. Expected one of apiKey, authToken, credentials, config, or profile to be set. Or for one of the \"X-Api-Key\" or \"Authorization\" headers to be explicitly omitted"
+}

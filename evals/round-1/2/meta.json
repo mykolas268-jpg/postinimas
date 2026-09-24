@@ -1,0 +1,8 @@
+{
+  "topic": "Kaip iš produkto nuotraukų sukurti reklaminį video su DI",
+  "type": "guide",
+  "cluster": "ai-video-reklama",
+  "keyword": "video iš nuotraukų",
+  "exitCode": 1,
+  "error": "Could not resolve authentication method. Expected one of apiKey, authToken, credentials, config, or profile to be set. Or for one of the \"X-Api-Key\" or \"Authorization\" headers to be explicitly omitted"
+}

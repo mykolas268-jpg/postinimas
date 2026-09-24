@@ -1,0 +1,8 @@
+{
+  "topic": "ChatGPT, Claude ir Gemini verslo planai — kainos ir lietuvių kalba",
+  "type": "comparison",
+  "cluster": "di-irankiai",
+  "keyword": "DI įrankiai verslui kainos",
+  "exitCode": 1,
+  "error": "Could not resolve authentication method. Expected one of apiKey, authToken, credentials, config, or profile to be set. Or for one of the \"X-Api-Key\" or \"Authorization\" headers to be explicitly omitted"
+}
