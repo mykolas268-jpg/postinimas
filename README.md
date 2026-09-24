@@ -28,6 +28,7 @@ topic ─► research (Sonnet 5 + web_search/web_fetch)
       ─► up to 2 revision loops ─► .mdx + PR body (claim table first)
       ─► verify job: site's `check:content --strict` + full build (no secrets)
       ─► draft PR labelled `shadow` + `pipeline` (Vercel builds a preview)
+      ─► Telegram message to the owner (Lithuanian): PR link, or why it stopped
 ```
 
 Models only return data. All git, HTTP and PR work is deterministic code.
@@ -40,6 +41,9 @@ Models only return data. All git, HTTP and PR work is deterministic code.
    - `SITE_REPO_TOKEN` — fine-grained personal access token, repository
      access **only** `mykolas268-jpg/verslas`, permissions: Contents RW, Pull
      requests RW, Issues RW (labels), Metadata R. Set an expiry and a reminder.
+   - `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID` (optional) — the same bot and
+     chat as the site's inquiry form works. Without them the notification is
+     only printed in the job log.
 2. **Variables**: `PIPELINE_PAUSED` = `false` (set `true` to stop everything).
 3. Nothing else: the `state` branch is created on the first run.
 

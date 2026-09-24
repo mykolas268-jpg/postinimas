@@ -5,11 +5,12 @@ import { fileURLToPath } from 'node:url';
 import { runArticle } from './article.js';
 import { loadPipelineConfig } from './config.js';
 import { BudgetExceededError, CostLedger } from './costs.js';
-import { aggregateRound, renderReport } from './eval.js';
+import { aggregateRound, renderReport, type EvalSummary } from './eval.js';
 import { AnthropicLlmClient } from './llm/anthropic.js';
 import type { LlmClient } from './llm/client.js';
 import { FixtureLlmClient } from './llm/fixture.js';
 import { log, setRunId } from './log.js';
+import { formatNotification, sendTelegram, type CostAlert, type NotifyEvent } from './notify.js';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
@@ -25,6 +26,9 @@ Commands
                  --cluster <key>      topic cluster from config/topics.yml
                  --keyword "…"        primary Lithuanian keyword
   eval-report  Aggregate an eval round: --in <dir> --round <id> [--state <dir>]
+  notify       Owner notification (Telegram if TELEGRAM_BOT_TOKEN/CHAT_ID are set):
+                 --kind article --dir <out> [--pr-url U] [--verify <result>] [--no-pr dry-run|backpressure|publish-failed]
+                 --kind eval --summary <summary.json> [--report-url U] [--state <dir>]
   audit-site   Read-only live checks of the site (docs/live-site-check.sh)
   run | refresh | report   Not available yet (Phases 3–5)
 
@@ -130,10 +134,17 @@ async function commandArticle(args: Args): Promise<number> {
 
   const writeMeta = (exitCode: number, error?: string) => {
     fs.mkdirSync(outDir, { recursive: true });
-    fs.writeFileSync(
-      path.join(outDir, 'meta.json'),
-      `${JSON.stringify({ topic, type, cluster: cluster.key, keyword: keyword ?? null, exitCode, ...(error ? { error } : {}) }, null, 2)}\n`,
-    );
+    const meta = {
+      topic,
+      type,
+      cluster: cluster.key,
+      keyword: keyword ?? null,
+      exitCode,
+      costUsd: Number(ledger.runTotal.toFixed(4)),
+      costAlerts: ledger.costAlerts,
+      ...(error ? { error } : {}),
+    };
+    fs.writeFileSync(path.join(outDir, 'meta.json'), `${JSON.stringify(meta, null, 2)}\n`);
   };
 
   let outcome;
@@ -229,6 +240,69 @@ function commandEvalReport(args: Args): number {
   return 0;
 }
 
+function readJsonFile<T>(file: string): T | null {
+  try {
+    return JSON.parse(fs.readFileSync(file, 'utf8')) as T;
+  } catch {
+    return null;
+  }
+}
+
+/** Formats the owner notification for a finished run and sends it if Telegram is configured. */
+async function commandNotify(args: Args): Promise<number> {
+  const pc = loadPipelineConfig(path.join(ROOT, 'config'));
+  const runUrl = process.env.GITHUB_RUN_ID
+    ? `${process.env.GITHUB_SERVER_URL ?? 'https://github.com'}/${process.env.GITHUB_REPOSITORY}/actions/runs/${process.env.GITHUB_RUN_ID}`
+    : 'vietinis paleidimas';
+  let event: NotifyEvent;
+  if (flag(args, 'kind') === 'eval') {
+    const summary = readJsonFile<EvalSummary>(path.resolve(flag(args, 'summary') ?? 'summary.json'));
+    if (!summary) throw new Error('notify --kind eval: --summary file missing or unreadable');
+    const stateArg = flag(args, 'state');
+    const ledger = stateArg ? new CostLedger(pc.config, 'notify', path.resolve(stateArg), { persist: false }) : null;
+    const crossed = ledger ? pc.config.caps.alertAtFractions.filter((fraction) => ledger.monthToDate >= fraction * pc.config.caps.monthlyUsd) : [];
+    event = {
+      kind: 'eval',
+      round: summary.round,
+      ready: summary.ready,
+      topics: summary.topics,
+      passRate: summary.passRate,
+      costUsd: summary.totalCostUsd,
+      ...(flag(args, 'report-url') ? { reportUrl: flag(args, 'report-url')! } : {}),
+      ...(ledger && crossed.length
+        ? { costAlerts: [{ fraction: Math.max(...crossed), monthToDate: Number(ledger.monthToDate.toFixed(2)), cap: pc.config.caps.monthlyUsd }] }
+        : {}),
+      runUrl,
+    };
+  } else {
+    const dir = path.resolve(flag(args, 'dir') ?? 'out/run');
+    const meta = readJsonFile<{ topic: string; exitCode: number; error?: string; costUsd?: number; costAlerts?: CostAlert[] }>(path.join(dir, 'meta.json'));
+    const summary = readJsonFile<{ status: 'ready' | 'failed'; title: string; attempts: number; costUsd: number }>(path.join(dir, 'summary.json'));
+    const noPr = flag(args, 'no-pr');
+    event = {
+      kind: 'article',
+      status: summary?.status ?? (meta?.exitCode === 4 ? 'aborted' : 'error'),
+      topic: meta?.topic ?? '(nežinoma)',
+      ...(summary?.title ? { title: summary.title } : {}),
+      ...(meta?.error ? { reason: meta.error.slice(0, 500) } : {}),
+      ...(summary?.attempts ? { attempts: summary.attempts } : {}),
+      ...(summary?.costUsd !== undefined ? { costUsd: summary.costUsd } : meta?.costUsd !== undefined ? { costUsd: meta.costUsd } : {}),
+      ...(flag(args, 'verify') ? { verify: flag(args, 'verify')! } : {}),
+      ...(flag(args, 'pr-url') ? { prUrl: flag(args, 'pr-url')! } : {}),
+      ...(noPr === 'dry-run' || noPr === 'backpressure' || noPr === 'publish-failed' ? { noPrReason: noPr } : {}),
+      ...(meta?.costAlerts?.length ? { costAlerts: meta.costAlerts } : {}),
+      runUrl,
+    };
+  }
+  const text = formatNotification(event);
+  process.stdout.write(`${text}\n`);
+  const result = await sendTelegram(text, { token: process.env.TELEGRAM_BOT_TOKEN, chatId: process.env.TELEGRAM_CHAT_ID });
+  if (result === 'skipped') process.stdout.write('(Telegram not configured — message not sent)\n');
+  // Best-effort: a failed notification must not fail the run, but it must be visible.
+  if (result === 'failed' && process.env.GITHUB_ACTIONS) process.stdout.write('::warning::Telegram notification failed\n');
+  return 0;
+}
+
 async function main(): Promise<number> {
   const args = parseArgs(process.argv.slice(2));
   if (process.env.PIPELINE_PAUSED === 'true') {
@@ -243,6 +317,8 @@ async function main(): Promise<number> {
       return commandEvalReport(args);
     case 'budget-check':
       return commandBudgetCheck(args);
+    case 'notify':
+      return commandNotify(args);
     case 'audit-site': {
       const base = flag(args, 'url') ?? 'https://verslas.ai';
       return spawnSync('bash', [path.join(ROOT, 'docs', 'live-site-check.sh'), base], { stdio: 'inherit' }).status ?? 1;

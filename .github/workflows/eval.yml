@@ -234,3 +234,11 @@ jobs:
           ROUND: ${{ needs.plan.outputs.round }}
         run: |
           scripts/push-state.sh state "eval: round ${ROUND} (run ${GITHUB_RUN_ID})"
+      - name: Notify the owner
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          ROUND: ${{ needs.plan.outputs.round }}
+        run: |
+          npm run -s pipeline -- notify --kind eval --summary "state/evals/round-${ROUND}/summary.json" --state state \
+            --report-url "${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/blob/state/evals/round-${ROUND}/report.md"

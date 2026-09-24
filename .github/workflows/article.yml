@@ -6,8 +6,12 @@ name: Article (shadow)
 #   verify   — no secrets; the site's strict content check + full build
 #   publish  — SITE_REPO_TOKEN only; opens the draft PR
 #
+#   notify   — TELEGRAM_* only; one Lithuanian message to the owner, always
+#
 # Secrets:   ANTHROPIC_API_KEY, SITE_REPO_TOKEN (fine-grained PAT on the site
-#            repo: Contents RW, Pull requests RW, Issues RW for labels)
+#            repo: Contents RW, Pull requests RW, Issues RW for labels),
+#            TELEGRAM_BOT_TOKEN + TELEGRAM_CHAT_ID (optional; without them the
+#            notification is only printed in the job log)
 # Variables: PIPELINE_PAUSED=true stops everything (kill switch)
 
 on:
@@ -211,6 +215,9 @@ jobs:
     timeout-minutes: 10
     permissions:
       contents: read
+    outputs:
+      pr_url: ${{ steps.pr.outputs.url }}
+      backpressure: ${{ steps.backpressure.outputs.skip }}
     env:
       SLUG: ${{ needs.generate.outputs.slug }}
       GH_TOKEN: ${{ secrets.SITE_REPO_TOKEN }}
@@ -242,6 +249,7 @@ jobs:
             echo "skip=true" >> "$GITHUB_OUTPUT"
           fi
       - name: Open draft shadow PR
+        id: pr
         if: steps.backpressure.outputs.skip != 'true'
         run: |
           set -euo pipefail
@@ -257,6 +265,50 @@ jobs:
           git push -q origin "$branch"
           gh label create shadow --repo "$SITE_REPO" --color BFD4F2 --description "Pipeline shadow draft — never merge" --force >/dev/null || true
           gh label create pipeline --repo "$SITE_REPO" --color 0E8A16 --description "Opened by the content pipeline" --force >/dev/null || true
-          gh pr create --repo "$SITE_REPO" --base main --head "$branch" --draft \
+          url=$(gh pr create --repo "$SITE_REPO" --base main --head "$branch" --draft \
             --title "[shadow] ${title}" --body-file ../out/pr-body.md \
-            --label shadow --label pipeline
+            --label shadow --label pipeline)
+          echo "url=${url}" >> "$GITHUB_OUTPUT"
+
+  notify:
+    needs: [generate, verify, publish]
+    # Always tell the owner how the run ended — including failures.
+    if: always() && needs.generate.result != 'cancelled'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - uses: actions/download-artifact@v7
+        # generate may have failed before it wrote anything
+        continue-on-error: true
+        with:
+          name: article-run
+          path: out
+      - name: Notify the owner
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          STATUS: ${{ needs.generate.outputs.status }}
+          VERIFY: ${{ needs.verify.result }}
+          PR_URL: ${{ needs.publish.outputs.pr_url }}
+          BACKPRESSURE: ${{ needs.publish.outputs.backpressure }}
+          DRY_RUN: ${{ inputs.dry_run }}
+        run: |
+          args=(notify --kind article --dir out)
+          [ -n "$PR_URL" ] && args+=(--pr-url "$PR_URL")
+          if [ "$STATUS" = "ready" ]; then
+            args+=(--verify "$VERIFY")
+            if [ -z "$PR_URL" ]; then
+              if [ "$DRY_RUN" = "true" ]; then args+=(--no-pr dry-run)
+              elif [ "$BACKPRESSURE" = "true" ]; then args+=(--no-pr backpressure)
+              else args+=(--no-pr publish-failed); fi
+            fi
+          fi
+          npm run -s pipeline -- "${args[@]}"

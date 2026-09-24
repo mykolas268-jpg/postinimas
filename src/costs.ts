@@ -85,6 +85,7 @@ export class CostLedger {
   private readonly entries: LedgerEntry[] = [];
   private monthToDateBefore = 0;
   private alerted = new Set<number>();
+  private readonly crossed: { fraction: number; monthToDate: number; cap: number }[] = [];
 
   /**
    * @param stateDir directory holding costs.jsonl (read for month-to-date);
@@ -146,6 +147,11 @@ export class CostLedger {
     return this.entries;
   }
 
+  /** Monthly-cap alert thresholds this run crossed (for the owner notification). */
+  get costAlerts(): readonly { fraction: number; monthToDate: number; cap: number }[] {
+    return this.crossed;
+  }
+
   /** Throws BudgetExceededError if a call costing up to `worstUsd` could break a cap. */
   assertAffordable(worstUsd: number, article?: string): void {
     const { perRunUsd, perArticleUsd, monthlyUsd } = this.config.caps;
@@ -189,6 +195,7 @@ export class CostLedger {
     for (const fraction of this.config.caps.alertAtFractions) {
       if (!this.alerted.has(fraction) && this.monthToDate >= fraction * this.config.caps.monthlyUsd) {
         this.alerted.add(fraction);
+        this.crossed.push({ fraction, monthToDate: Number(this.monthToDate.toFixed(2)), cap: this.config.caps.monthlyUsd });
         log.warn('cost_alert', {
           fraction,
           monthToDate: Number(this.monthToDate.toFixed(2)),
