@@ -2,6 +2,6 @@
 # (.github/workflows/eval.yml): every topic in config/eval-topics.yml (or the
 # listed numbers) is generated in parallel with --dry-run (no PRs), and the
 # report is committed to the `state` branch under evals/round-<round>/.
-round: 1
+round: 2
 topics: all
-note: Baseline — Phase 2 prompts as first written, no tuning yet.
+note: First real run — length-variant chooser, keyword tolerance, number rule in the writer prompt.
