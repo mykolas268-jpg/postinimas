@@ -66,15 +66,19 @@ export class AnthropicLlmClient implements LlmClient {
 
   async structured<T>(call: StructuredCall<T>): Promise<T> {
     this.ledger.assertAffordable(
-      worstCaseUsd(this.config, call.model, call.system.length + call.user.length, call.maxTokens),
+      worstCaseUsd(this.config, call.model, call.system.length + (call.userPrefix?.length ?? 0) + call.user.length, call.maxTokens),
       call.article,
     );
     const started = Date.now();
+    const content: Anthropic.TextBlockParam[] = [
+      ...(call.userPrefix ? [{ type: 'text' as const, text: call.userPrefix, cache_control: { type: 'ephemeral' as const } }] : []),
+      { type: 'text', text: call.user },
+    ];
     const stream = this.client.messages.stream({
       model: call.model,
       max_tokens: call.maxTokens,
       system: cachedSystem(call.system),
-      messages: [{ role: 'user', content: call.user }],
+      messages: [{ role: 'user', content }],
       output_config: {
         format: zodOutputFormat(call.schema),
         ...(supportsEffort(call.model) ? { effort: call.effort } : {}),
@@ -148,6 +152,10 @@ export class AnthropicLlmClient implements LlmClient {
         messages,
         tools,
         output_config: { effort: call.effort },
+        // Automatic caching of the growing conversation: a pause_turn
+        // continuation re-sends every search result and fetched page, and
+        // reads that prefix at the cache price instead of full input price.
+        cache_control: { type: 'ephemeral' },
       });
       const message = await stream.finalMessage();
       this.ledger.record(call.step, usageRecord(call.model, message.usage), call.article);

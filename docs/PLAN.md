@@ -110,6 +110,13 @@ fails CI.
    values no longer interpolate into shell scripts. Accepted risk: the link
    checker follows redirects from allowlisted (Anthropic-retrieved, public)
    URLs and reads only the status code.
+4. **API cost.** The writer's brief and the fact-check's fact sheet are sent
+   as cached prefixes (revisions read them at ~5 % / 10 % of input price);
+   research uses automatic caching for the growing conversation, so pause_turn
+   continuations stop re-paying every fetched page; the budget estimate uses
+   2.5 chars/token (Lithuanian JSON), not 3. Deliberately unchanged until the
+   first real round shows the numbers: effort levels and server-side refusal
+   fallbacks.
 
 Not changed on purpose: the H1 keyword check still requires the keyword's
 own words ("žymėti" does not count for "žymėjimas"). That is an SEO rule,

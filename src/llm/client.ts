@@ -15,6 +15,12 @@ export interface CallBase {
   model: string;
   /** Large static instructions — cached. */
   system: string;
+  /**
+   * Content that stays byte-identical across this article's calls of the same
+   * step (the writer's brief, the fact-check's fact sheet). Sent before `user`
+   * with its own cache breakpoint, so revisions read it at the cache price.
+   */
+  userPrefix?: string;
   /** Per-request content. */
   user: string;
   maxTokens: number;

@@ -2,6 +2,7 @@ import type Anthropic from '@anthropic-ai/sdk';
 import { describe, expect, it } from 'vitest';
 import { AnthropicLlmClient } from '../src/llm/anthropic.js';
 import { CostLedger } from '../src/costs.js';
+import { z } from 'zod';
 import { config } from './helpers.js';
 
 /** A fake SDK client whose `messages.stream` replays the given responses. */
@@ -79,5 +80,29 @@ describe('research loop', () => {
     const result = await new AnthropicLlmClient(config, ledger, client).research(researchCall);
     expect(calls).toHaveLength(3);
     expect(result.notes).toContain('end_turn');
+  });
+
+  it('caches the growing research conversation for pause_turn continuations', async () => {
+    const { client, calls } = fakeClient([{ stop_reason: 'end_turn', content: [] as Anthropic.ContentBlock[], usage: { input_tokens: 10, output_tokens: 10 } as Anthropic.Usage }]);
+    await new AnthropicLlmClient(config, new CostLedger(config, 'test', null, { persist: false }), client).research(researchCall);
+    expect((calls[0] as { cache_control?: unknown }).cache_control).toEqual({ type: 'ephemeral' });
+  });
+});
+
+describe('structured calls', () => {
+  it('sends the stable prefix as its own cached block before the per-call text', async () => {
+    const { client, calls } = fakeClient([
+      {
+        stop_reason: 'end_turn',
+        content: [{ type: 'text', text: '{"ok":true}', citations: null }] as unknown as Anthropic.ContentBlock[],
+        usage: { input_tokens: 10, output_tokens: 10 } as Anthropic.Usage,
+      },
+    ]);
+    const llm = new AnthropicLlmClient(config, new CostLedger(config, 'test', null, { persist: false }), client);
+    await llm.structured({ ...researchCall, step: 'write', model: config.models.writer, userPrefix: 'BRIEF', user: 'REVISION', schema: z.object({ ok: z.boolean() }) });
+    const content = (calls[0] as { messages: { content: { text: string; cache_control?: unknown }[] }[] }).messages[0]!.content;
+    expect(content.map((block) => block.text)).toEqual(['BRIEF', 'REVISION']);
+    expect(content[0]!.cache_control).toEqual({ type: 'ephemeral' });
+    expect(content[1]!.cache_control).toBeUndefined();
   });
 });

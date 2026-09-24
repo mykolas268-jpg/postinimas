@@ -48,9 +48,13 @@ export function priceUsage(config: Config, usage: UsageRecord): number {
   );
 }
 
-/** Rough token count for budget estimates; Lithuanian averages ~3 chars/token. */
+/**
+ * Conservative token count for budget estimates. Lithuanian (diacritics) and
+ * JSON escaping tokenize denser than English; 2.5 chars/token errs high.
+ */
+const CHARS_PER_TOKEN = 2.5;
 export function estimateTokens(text: string): number {
-  return Math.ceil(text.length / 3);
+  return Math.ceil(text.length / CHARS_PER_TOKEN);
 }
 
 export function worstCaseUsd(
@@ -61,7 +65,7 @@ export function worstCaseUsd(
 ): number {
   return priceUsage(config, {
     model,
-    inputTokens: Math.ceil(inputChars / 3),
+    inputTokens: Math.ceil(inputChars / CHARS_PER_TOKEN),
     outputTokens: maxOutputTokens,
     cacheWriteTokens: 0,
     cacheReadTokens: 0,

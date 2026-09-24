@@ -158,19 +158,19 @@ export async function write(ctx: StepContext, input: WriterInput): Promise<Draft
     },
   };
 
-  const parts = [`Write the article from this brief.\n\n${json(brief)}`];
-  if (input.previous) {
-    parts.push(
-      `This is a revision. Your previous version (after language editing) failed quality checks.\n\nPrevious version:\n${json(input.previous.article)}\n\nFix every problem below. Keep everything that was fine. Do not introduce new facts.\n\nProblems:\n${input.previous.problems.map((problem) => `- ${problem}`).join('\n')}`,
-    );
-  }
+  // The brief is identical for the first draft and every revision: it is the
+  // cached prefix, and only the revision request after it changes.
+  const revision = input.previous
+    ? `This is a revision. Your previous version (after language editing) failed quality checks.\n\nPrevious version:\n${json(input.previous.article)}\n\nFix every problem below. Keep everything that was fine. Do not introduce new facts.\n\nProblems:\n${input.previous.problems.map((problem) => `- ${problem}`).join('\n')}`
+    : 'Write the first draft now.';
 
   return ctx.llm.structured({
     step: input.previous ? 'revise' : 'write',
     model: config.models.writer,
     effort: config.effort.writer,
     system: prompt(ctx, 'writer') + languageReference(ctx),
-    user: parts.join('\n\n'),
+    userPrefix: `Write the article from this brief.\n\n${json(brief)}`,
+    user: revision,
     maxTokens: MAX_TOKENS.write,
     schema: DraftSchema,
     article: ctx.article,
@@ -210,7 +210,9 @@ export async function factCheck(
     model: config.models.factcheck,
     effort: config.effort.factcheck,
     system: prompt(ctx, 'factcheck'),
-    user: `Fact sheet:\n${json(factSheet.claims)}\n\nHouse facts (id "HOUSE"):\n${json(config.houseFacts)}\n\nArticle:\n${json(article)}`,
+    // Same fact sheet on every attempt: cached; only the article changes.
+    userPrefix: `Fact sheet:\n${json(factSheet.claims)}\n\nHouse facts (id "HOUSE"):\n${json(config.houseFacts)}`,
+    user: `Article:\n${json(article)}`,
     maxTokens: MAX_TOKENS.factcheck,
     schema: FactCheckSchema,
     article: ctx.article,
