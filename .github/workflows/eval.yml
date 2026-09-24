@@ -30,7 +30,7 @@ permissions:
 
 jobs:
   plan:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 10
     permissions:
       contents: write # evals/round-<n>/started.json on the state branch
@@ -41,7 +41,7 @@ jobs:
       matrix: ${{ steps.plan.outputs.matrix }}
       per_topic_usd: ${{ steps.plan.outputs.per_topic_usd }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Require ANTHROPIC_API_KEY; the schedule starts each round at most once
         id: gate
         env:
@@ -85,7 +85,7 @@ jobs:
           fi
           echo "go=true" >> "$GITHUB_OUTPUT"
       - if: steps.gate.outputs.go == 'true'
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
           node-version: 22
           cache: npm
@@ -145,7 +145,7 @@ jobs:
   article:
     needs: plan
     if: needs.plan.outputs.go == 'true'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 60
     strategy:
       fail-fast: false
@@ -153,8 +153,8 @@ jobs:
       matrix:
         topic: ${{ fromJSON(needs.plan.outputs.matrix) }}
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
         with:
           node-version: 22
           cache: npm
@@ -162,7 +162,7 @@ jobs:
       - name: Install Hunspell (lt_LT)
         run: sudo apt-get update -q && sudo apt-get install -y -q hunspell hunspell-lt hunspell-en-us
       - name: Check out the site (read-only)
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           repository: mykolas268-jpg/verslas
           path: site
@@ -190,7 +190,7 @@ jobs:
             --dry-run --out eval-out --ledger-mirror eval-out/costs.jsonl 2> >(tee eval-out/log.txt >&2)
           echo "exit code: $?"
           exit 0
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v6
         if: always()
         with:
           name: eval-${{ matrix.topic }}
@@ -200,18 +200,18 @@ jobs:
   report:
     needs: [plan, article]
     if: always() && needs.plan.result == 'success' && needs.plan.outputs.go == 'true'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 15
     permissions:
       contents: write # state branch
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
         with:
           node-version: 22
           cache: npm
       - run: npm ci
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v7
         with:
           pattern: eval-*
           path: eval-in
