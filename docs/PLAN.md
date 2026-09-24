@@ -309,15 +309,19 @@ All new fields are **optional** with defaults, so the 4 existing articles build 
 
 ```ts
 updated?: 'YYYY-MM-DD'                 // → dateModified, visible "Atnaujinta …", sitemap lastmod
+seoTitle?: string                      // ≤ 60 chars; <title> override for long titles
 type?: 'guide' | 'news' | 'comparison' | 'roundup'   // default 'guide'; 'news' → NewsArticle schema
-author?: string                        // key into lib/authors.ts; default 'mykolas-gustas'
+author?: string                        // key into lib/authors.ts; omitted → legacy organization byline
 cluster?: string                       // key into topics → hub page + breadcrumbs
 sources?: { title: string; url: string; publisher?: string; date?: string }[]
                                        // → rendered "Šaltiniai" section + JSON-LD citation
 faq?: { q: string; a: string }[]       // → rendered visible FAQ + FAQPage JSON-LD
-aiAssisted?: boolean                   // → short disclosure line (see § 9)
-changeNote?: string                    // → visible "Kas pasikeitė" note on refreshes
+entities?: { name: string; sameAs?: string[] }[]    // → JSON-LD mentions
+aiAssisted?: boolean                   // → disclosure line; requires `author`
+changeNote?: string                    // → visible "Kas pasikeitė" note; requires `updated`
 ```
+
+**Implemented in [mykolas268-jpg/verslas#2](https://github.com/mykolas268-jpg/verslas/pull/2)** (2026-09-24). The pipeline must also name files `<slug>.mdx`, because the admin panel and storage address posts by file name.
 
 `excerpt` keeps doubling as the meta description, with 140–160 characters enforced by the pipeline only. The `description` field is not added separately [opinion: fewer fields, fewer mistakes].
 
