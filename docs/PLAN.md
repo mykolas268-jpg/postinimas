@@ -77,6 +77,7 @@ before the fix and covered by a test:
 | Relative time words and straight quotes inside „…“ quotations passed our gate but fail the site's `check:content --strict` in verify | missed error | both rules now also read the body with quotations |
 | `eval.yml` cloned `state` and the site without a token — breaks as soon as the repos are made private (A1) | workflow bug | authenticated remotes; site checkout uses `SITE_REPO_TOKEN` like `article.yml` |
 | The hourly schedule re-ran any round without a report — a failed report step would have re-run (and re-paid, ~45 USD) the round every hour until the monthly cap | cost risk | the plan job writes `evals/round-<n>/started.json` before any spend (fails closed); the schedule never re-runs a started round; a push of `eval/request.yml` still retries explicitly |
+| Research spend was checked once (3 USD estimate) before up to 7 `pause_turn` requests; `max_uses` is documented per request, and every continuation re-sends the growing context | cost risk | the loop re-checks the recorded spend before each continuation, stops at `research.worstCaseUsd` and keeps what it has; the per-article/monthly caps still throw |
 
 Not changed on purpose: the H1 keyword check still requires the keyword's
 own words ("žymėti" does not count for "žymėjimas"). That is an SEO rule,

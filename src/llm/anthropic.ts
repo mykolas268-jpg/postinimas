@@ -57,9 +57,11 @@ export class AnthropicLlmClient implements LlmClient {
   constructor(
     private readonly config: Config,
     private readonly ledger: CostLedger,
+    /** Injected in tests. */
+    client?: Anthropic,
   ) {
     // Retries 408/409/429/5xx and connection errors with backoff.
-    this.client = new Anthropic({ maxRetries: 3, timeout: 20 * 60 * 1000 });
+    this.client = client ?? new Anthropic({ maxRetries: 3, timeout: 20 * 60 * 1000 });
   }
 
   async structured<T>(call: StructuredCall<T>): Promise<T> {
@@ -125,7 +127,20 @@ export class AnthropicLlmClient implements LlmClient {
     const seen = new Map<string, SeenSource>();
     const notes: string[] = [];
 
+    // `max_uses` is documented per request, and each pause_turn continuation is a
+    // new request that re-sends the whole growing context — so the research budget
+    // is enforced here, across continuations, from what the ledger has recorded.
+    const budget = this.config.research.worstCaseUsd;
+    const startSpend = this.ledger.runTotal;
     for (let turn = 0; turn <= MAX_PAUSE_CONTINUATIONS; turn += 1) {
+      if (turn > 0) {
+        const spent = this.ledger.runTotal - startSpend;
+        if (spent >= budget) {
+          log.warn('research_budget_stop', { turn, spentUsd: Number(spent.toFixed(4)), budgetUsd: budget, sources: seen.size });
+          break;
+        }
+        this.ledger.assertAffordable(budget - spent, call.article);
+      }
       const stream = this.client.messages.stream({
         model: call.model,
         max_tokens: call.maxTokens,
