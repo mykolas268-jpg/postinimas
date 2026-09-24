@@ -76,6 +76,7 @@ before the fix and covered by a test:
 | A required internal link to *any* existing article: with only two video articles, an EU AI Act or funding article had to link to a video price guide, while the prompt said "only where genuinely relevant" | prompt/gate mismatch | a link is required only when a same-cluster article exists (the writer sees `sameCluster`); otherwise a warning. Site PR #2 sets `cluster: ai-video-reklama` on both video articles |
 | Relative time words and straight quotes inside „…“ quotations passed our gate but fail the site's `check:content --strict` in verify | missed error | both rules now also read the body with quotations |
 | `eval.yml` cloned `state` and the site without a token — breaks as soon as the repos are made private (A1) | workflow bug | authenticated remotes; site checkout uses `SITE_REPO_TOKEN` like `article.yml` |
+| The hourly schedule re-ran any round without a report — a failed report step would have re-run (and re-paid, ~45 USD) the round every hour until the monthly cap | cost risk | the plan job writes `evals/round-<n>/started.json` before any spend (fails closed); the schedule never re-runs a started round; a push of `eval/request.yml` still retries explicitly |
 
 Not changed on purpose: the H1 keyword check still requires the keyword's
 own words ("žymėti" does not count for "žymėjimas"). That is an SEO rule,
