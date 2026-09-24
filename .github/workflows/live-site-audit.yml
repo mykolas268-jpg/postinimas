@@ -24,7 +24,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Run live checks
-        run: bash docs/live-site-check.sh "${{ inputs.base || 'https://verslas.ai' }}" | tee live-check.txt
+        env:
+          BASE: ${{ inputs.base || 'https://verslas.ai' }}
+        run: |
+          case "$BASE" in https://*) ;; *) echo "::error::base must be an https URL"; exit 1;; esac
+          bash docs/live-site-check.sh "$BASE" | tee live-check.txt
       - uses: actions/upload-artifact@v4
         with:
           name: live-check

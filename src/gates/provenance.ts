@@ -1,5 +1,6 @@
 import type { SeenSource } from '../llm/client.js';
 import type { Claim, FactSheet } from '../schemas.js';
+import { renderedTargets, type RenderedTarget } from '../site/rendered.js';
 import { gateResult, type GateResult } from './types.js';
 import { markdownLinks } from './text.js';
 
@@ -110,19 +111,38 @@ export function factSheetUrls(factSheet: FactSheet): Set<string> {
   return new Set(factSheet.claims.flatMap((claim) => claim.sources.map((source) => normalizeUrl(source.url))));
 }
 
-/** Outbound links in the body and listed sources must come from the fact sheet. */
+/**
+ * Outbound links in the body and listed sources must come from the fact sheet.
+ * Checked on what the site will render (GFM autolinks, reference links, JSX
+ * attributes included). Images are never allowed: pipeline articles must not
+ * reuse source images. Anything that is not an anchor, an internal path (the
+ * SEO gate validates those) or an allowlisted http(s) URL fails.
+ */
 export function checkOutboundLinks(body: string, sourceUrls: string[], factSheet: FactSheet): GateResult {
   const allowed = factSheetUrls(factSheet);
   const errors: string[] = [];
-  for (const link of markdownLinks(body)) {
-    if (/^https?:\/\//i.test(link.url) && !allowed.has(normalizeUrl(link.url))) {
-      errors.push(`Nuoroda ne iš faktų lapo: ${link.url}`);
+  let targets: RenderedTarget[];
+  try {
+    targets = renderedTargets(body);
+  } catch (error) {
+    errors.push(`MDX nepavyko išanalizuoti, nuorodos netikrintos: ${error instanceof Error ? error.message : String(error)}`);
+    targets = markdownLinks(body).map((link) => ({ kind: 'link' as const, url: link.url }));
+  }
+  for (const { kind, url: raw } of targets) {
+    const url = raw.trim();
+    if (kind === 'image') {
+      errors.push(`Paveikslėliai neleidžiami (šaltinių vaizdų naudoti negalima): ${url}`);
+    } else if (url.startsWith('#') || (url.startsWith('/') && !url.startsWith('//'))) {
+      continue;
+    } else if (/^https?:\/\//i.test(url)) {
+      if (!allowed.has(normalizeUrl(url))) errors.push(`Nuoroda ne iš faktų lapo: ${url}`);
+    } else {
+      errors.push(`Neleistina nuoroda: ${url}`);
     }
-    if (/^(javascript|data|vbscript):/i.test(link.url)) errors.push(`Neleistina nuoroda: ${link.url}`);
   }
   for (const url of sourceUrls) {
     if (!allowed.has(normalizeUrl(url))) errors.push(`Šaltinis ne iš faktų lapo: ${url}`);
   }
   if (sourceUrls.length === 0) errors.push('Nėra šaltinių (sources).');
-  return gateResult('links-allowlist', errors);
+  return gateResult('links-allowlist', [...new Set(errors)]);
 }

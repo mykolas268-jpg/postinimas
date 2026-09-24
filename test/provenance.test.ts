@@ -55,3 +55,35 @@ describe('provenance', () => {
     expect(result.errors[0]).toMatch(/evil/);
   });
 });
+
+// Every form below renders as a link or an image on the site (remark-gfm), and
+// each one slipped past the old "[text](url)" regex.
+describe('outbound link allowlist on rendered MDX', () => {
+  const sheet = {
+    claims: [{ id: 'C1', claim: 'x', value: null, sources: [{ url: 'https://ok.lt/a', tier: 'primary', publisher: 'a', title: 't', date: null }] }],
+  } as unknown as Parameters<typeof checkOutboundLinks>[2];
+  const errorsFor = (body: string) => checkOutboundLinks(body, ['https://ok.lt/a'], sheet).errors;
+
+  it.each([
+    ['bare URL', 'Daugiau: https://evil.example/x ir tiek.'],
+    ['www autolink', 'Daugiau: www.evil.example ir tiek.'],
+    ['e-mail autolink', 'Rašykite support@evil.example.'],
+    ['reference link', 'Žr. [čia][1].\n\n[1]: https://evil.example/x'],
+    ['protocol-relative link', 'Žr. [čia](//evil.example/x).'],
+    ['mailto link', 'Rašykite [mums](mailto:x@evil.example).'],
+    ['external image', '![paveikslas](https://evil.example/pixel.png)'],
+    ['ProseImage', '<ProseImage src="https://evil.example/a.png" alt="a" />'],
+    ['javascript link', '[spausk](javascript:alert(1))'],
+  ])('rejects %s', (_name, body) => {
+    expect(errorsFor(body).length).toBeGreaterThan(0);
+  });
+
+  it('accepts allowlisted URLs in any form, internal paths and anchors', () => {
+    expect(errorsFor('Žr. https://ok.lt/a ir [čia](https://www.ok.lt/a/), [kainos](/straipsniai/x), [apačioje](#duk).')).toEqual([]);
+  });
+
+  it('fails closed when the body is not valid MDX', () => {
+    expect(errorsFor('Tekstas {neuždarytas').join()).toMatch(/MDX nepavyko/);
+  });
+});
+

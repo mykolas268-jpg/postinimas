@@ -35,8 +35,23 @@ const STATUS_LT: Record<string, string> = {
   opinion: 'nuomonė',
 };
 
+/**
+ * Text derived from model output (and so, indirectly, from web pages) must not
+ * act as markup in the PR: no @mentions (notifications to strangers), no
+ * images, no hidden link targets, no HTML. Bare URLs stay visible as text.
+ */
+export function untrusted(text: string): string {
+  return text
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/@(?=[A-Za-z0-9_-])/g, '@\u200b')
+    .replace(/!\[/g, '!\u200b[')
+    .replace(/\]\(/g, ']\u200b(')
+    .replace(/\]\[/g, ']\u200b[');
+}
+
 function cell(text: string): string {
-  return text.replace(/\|/g, '\\|').replace(/\n/g, ' ');
+  return untrusted(text).replace(/\|/g, '\\|').replace(/\n/g, ' ');
 }
 
 function claimSources(factSheet: FactSheet, ids: string[]): string {
@@ -93,8 +108,8 @@ export function buildPrBody(input: ReportInput): string {
 
   out.push('## Rizikos ir neaiškumai', '');
   const risks = [
-    ...input.factSheet.conflicts.map((conflict) => `Šaltiniai nesutaria: ${conflict.description}`),
-    ...input.factSheet.unknowns.slice(0, 12).map((unknown) => `Nepatvirtinta: ${unknown}`),
+    ...input.factSheet.conflicts.map((conflict) => `Šaltiniai nesutaria: ${untrusted(conflict.description)}`),
+    ...input.factSheet.unknowns.slice(0, 12).map((unknown) => `Nepatvirtinta: ${untrusted(unknown)}`),
     ...(input.demotedClaims > 0 ? [`Atmesta teiginių dėl nepakankamų šaltinių: ${input.demotedClaims}.`] : []),
   ];
   out.push(...(risks.length ? risks.map((risk) => `- ${risk}`) : ['- Nėra.']), '');
@@ -102,12 +117,12 @@ export function buildPrBody(input: ReportInput): string {
   out.push('## Lietuvių kalba', '');
   const uncertainties = input.editor?.uncertainties ?? [];
   out.push(`**Redaktoriaus neaiškumai (${uncertainties.length}):**`);
-  out.push(...(uncertainties.length ? uncertainties.map((item) => `- ${item}`) : ['- Nėra.']), '');
+  out.push(...(uncertainties.length ? uncertainties.map((item) => `- ${untrusted(item)}`) : ['- Nėra.']), '');
   const changes = input.editor?.changes ?? [];
   if (changes.length) {
     out.push(`<details><summary>Redaktoriaus pakeitimai (${changes.length})</summary>`, '');
     for (const change of changes.slice(0, 40)) {
-      out.push(`- „${change.before}“ → „${change.after}“ — ${change.reason}`);
+      out.push(`- „${untrusted(change.before)}“ → „${untrusted(change.after)}“ — ${untrusted(change.reason)}`);
     }
     out.push('', '</details>', '');
   }
@@ -120,8 +135,8 @@ export function buildPrBody(input: ReportInput): string {
   }
   out.push('');
   const findings = input.gates.flatMap((gate) => [
-    ...gate.errors.map((message) => `- **${gate.gate}**: ${message}`),
-    ...gate.warnings.map((message) => `- ${gate.gate}: ${message}`),
+    ...gate.errors.map((message) => `- **${gate.gate}**: ${untrusted(message)}`),
+    ...gate.warnings.map((message) => `- ${gate.gate}: ${untrusted(message)}`),
   ]);
   if (findings.length) {
     out.push(`<details><summary>Visi vartų pranešimai (${findings.length})</summary>`, '', ...findings, '', '</details>', '');
@@ -137,7 +152,7 @@ export function buildPrBody(input: ReportInput): string {
   out.push('');
 
   out.push('## Tavo patirtis (neprivaloma)', '');
-  out.push(input.experienceQuestion || '—');
+  out.push(input.experienceQuestion ? untrusted(input.experienceQuestion) : '—');
   out.push('', 'Jei atsakysi, tavo žodžiai (tik kalbos pataisymai) bus įdėti į straipsnį kaip pažymėtas blokas.', '');
 
   return out.join('\n');

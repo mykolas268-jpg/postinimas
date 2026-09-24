@@ -92,6 +92,25 @@ fact-check example quotes that omit the marker (examples are now judged on
 the article sentence). Any future gate change that fails a good article
 fails CI.
 
+### Code audit (2026-09-24, five rounds)
+
+1. **Correctness.** Output ceilings raised (writer/editor 64k, others 32k —
+   thinking counts toward them and can't be disabled on the writer model);
+   truncated research is marked; a malformed cost-mirror line no longer
+   crashes `eval-report` (which would have kept the round's spend out of the
+   monthly cap); link check fails only on definite dead links.
+2. **Performance.** Three quadratic regexes (5–28 s on pathological 60–80 KB
+   output) made linear (≤ 44 ms); link check runs alongside the fact-check.
+3. **Security.** The outbound-link allowlist missed everything the site
+   renders as a link except `[text](url)`: GFM bare URLs, `www.` and e-mail
+   autolinks, reference links, protocol-relative and `mailto:` links, and
+   images (Markdown and `ProseImage`). It now parses the body with the site's
+   own MDX parser + remark-gfm and fails closed. PR bodies neutralise
+   @mentions, images, hidden links and HTML in model-derived text. Workflow
+   values no longer interpolate into shell scripts. Accepted risk: the link
+   checker follows redirects from allowlisted (Anthropic-retrieved, public)
+   URLs and reads only the status code.
+
 Not changed on purpose: the H1 keyword check still requires the keyword's
 own words ("žymėti" does not count for "žymėjimas"). That is an SEO rule,
 not a false positive; the writer prompt now says so explicitly.

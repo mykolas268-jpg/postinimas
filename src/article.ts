@@ -14,13 +14,14 @@ import {
 } from './gates/provenance.js';
 import { checkSeo } from './gates/seo.js';
 import { checkStructure } from './gates/structure.js';
-import { chooseFitting, keywordStems, markdownLinks, wordCount } from './gates/text.js';
+import { chooseFitting, keywordStems, wordCount } from './gates/text.js';
 import type { GateResult } from './gates/types.js';
 import type { LlmClient } from './llm/client.js';
 import { log } from './log.js';
 import { buildPrBody } from './report.js';
 import type { EditorOutput, FactCheckOutput, FactSheet, Source } from './schemas.js';
 import { buildArticleFile, slugify } from './site/mdx.js';
+import { renderedTargets } from './site/rendered.js';
 import { loadRegistry, mostSimilar } from './site/registry.js';
 import { buildFactSheet, edit, factCheck, research, write, type ArticleRequest, type StepContext } from './steps.js';
 
@@ -142,9 +143,10 @@ export async function runArticle(request: ArticleRequest, options: ArticleRunOpt
     // counts only if the fact-check passes too.
     factCheckResult = null;
     if (gates.every((gate) => gate.passed)) {
+      // The allowlist gate has already parsed the body successfully at this point.
       const external = [
         ...sources.map((source) => source.url),
-        ...markdownLinks(edited.bodyMdx).map((link) => link.url).filter((url) => /^https?:/i.test(url)),
+        ...renderedTargets(edited.bodyMdx).map((target) => target.url).filter((url) => /^https?:/i.test(url)),
       ];
       const links = options.checkLinks ? checkLinksResolve(external, options.fetcher) : null;
       factCheckResult = await factCheck(ctx, { title: edited.title, excerpt: edited.excerpt, bodyMdx: edited.bodyMdx, faq: edited.faq }, factSheet);

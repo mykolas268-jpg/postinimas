@@ -89,6 +89,8 @@ jobs:
             import { load } from 'js-yaml';
             import fs from 'node:fs';
             const request = load(fs.readFileSync('eval/request.yml', 'utf8'));
+            // The round ends up in paths, commit messages and shell arguments.
+            if (!/^[A-Za-z0-9._-]{1,32}$/.test(String(request.round))) throw new Error('eval/request.yml: round must match [A-Za-z0-9._-]{1,32}');
             const topics = load(fs.readFileSync('config/eval-topics.yml', 'utf8')).items;
             const config = load(fs.readFileSync('config/config.yml', 'utf8'));
             const all = topics.map((_, index) => String(index + 1));
@@ -165,10 +167,11 @@ jobs:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           PIPELINE_PAUSED: ${{ vars.PIPELINE_PAUSED }}
           PIPELINE_MAX_ARTICLE_USD: ${{ needs.plan.outputs.per_topic_usd }}
+          TOPIC_NUMBER: ${{ matrix.topic }}
         run: |
           mkdir -p eval-out
           set +e
-          npm run -s pipeline -- article --eval-topic "${{ matrix.topic }}" --site site --state state \
+          npm run -s pipeline -- article --eval-topic "$TOPIC_NUMBER" --site site --state state \
             --dry-run --out eval-out --ledger-mirror eval-out/costs.jsonl 2> >(tee eval-out/log.txt >&2)
           echo "exit code: $?"
           exit 0
@@ -208,12 +211,16 @@ jobs:
             mkdir state && git -C state init -q -b state && git -C state remote add origin "$remote"
           fi
       - name: Aggregate report
-        run: npm run -s pipeline -- eval-report --in eval-in --round "${{ needs.plan.outputs.round }}" --state state
+        env:
+          ROUND: ${{ needs.plan.outputs.round }}
+        run: npm run -s pipeline -- eval-report --in eval-in --round "$ROUND" --state state
       - name: Commit report and spend to state
+        env:
+          ROUND: ${{ needs.plan.outputs.round }}
         run: |
           cd state
           git add -A
           if git diff --cached --quiet; then echo "No changes"; exit 0; fi
           git -c user.name="verslas-pipeline" -c user.email="actions@users.noreply.github.com" \
-            commit -q -m "eval: round ${{ needs.plan.outputs.round }} (run ${GITHUB_RUN_ID})"
+            commit -q -m "eval: round ${ROUND} (run ${GITHUB_RUN_ID})"
           git push -q origin state
