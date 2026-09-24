@@ -25,6 +25,14 @@ jobs:
       matrix: ${{ steps.plan.outputs.matrix }}
       per_topic_usd: ${{ steps.plan.outputs.per_topic_usd }}
     steps:
+      - name: Require ANTHROPIC_API_KEY
+        env:
+          KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: |
+          if [ -z "$KEY" ]; then
+            echo "::error::ANTHROPIC_API_KEY secret is not set (Settings → Secrets and variables → Actions). Nothing was run."
+            exit 1
+          fi
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:

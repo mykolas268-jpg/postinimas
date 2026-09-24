@@ -41,11 +41,14 @@ export function checkStructure(input: StructureInput): GateResult {
   }
 
   // "Trumpai" box with 3–5 bullets near the start
-  const trumpai = code.match(/<Callout\s+type="info"\s+title="Trumpai"\s*>([\s\S]*?)<\/Callout>/);
+  // Attribute order does not matter: <Callout title="Trumpai" type="info"> is fine too.
+  const trumpai = [...code.matchAll(/<Callout\b([^>]*)>([\s\S]*?)<\/Callout>/g)].find(
+    (match) => /\btype="info"/.test(match[1] ?? '') && /\btitle="Trumpai"/.test(match[1] ?? ''),
+  );
   if (!trumpai) {
     errors.push('Trūksta <Callout type="info" title="Trumpai"> bloko.');
   } else {
-    const bullets = (trumpai[1] ?? '').split('\n').filter((line) => /^\s*[-*]\s+\S/.test(line)).length;
+    const bullets = (trumpai[2] ?? '').split('\n').filter((line) => /^\s*[-*]\s+\S/.test(line)).length;
     if (bullets < 3 || bullets > 5) errors.push(`„Trumpai“ bloke ${bullets} punktai (reikia 3–5).`);
     if ((trumpai.index ?? 0) > 1500) warnings.push('„Trumpai“ blokas toli nuo pradžios.');
   }
@@ -67,7 +70,10 @@ export function checkStructure(input: StructureInput): GateResult {
   }
 
   // Legal note
-  if (input.isLegal && !/<Callout\s+type="warning"\s+title="Ne teisinė konsultacija"/.test(code)) {
+  const legalNote = [...code.matchAll(/<Callout\b([^>]*)>/g)].some(
+    (match) => /\btype="warning"/.test(match[1] ?? '') && /\btitle="Ne teisinė konsultacija"/.test(match[1] ?? ''),
+  );
+  if (input.isLegal && !legalNote) {
     errors.push('Teisinei temai reikia <Callout type="warning" title="Ne teisinė konsultacija">.');
   }
 

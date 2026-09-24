@@ -3,7 +3,7 @@ import type { RegistryEntry } from '../site/registry.js';
 import { slugify } from '../site/mdx.js';
 import { gateResult, type GateResult } from './types.js';
 import {
-  containsStems,
+  containsKeyword,
   firstWords,
   headings,
   keywordStems,
@@ -54,13 +54,13 @@ export function checkSeo(input: SeoInput, config: Config, registry: RegistryEntr
   // Primary keyword placement (inflection-tolerant stems)
   const stems = keywordStems(input.primaryKeyword);
   if (stems.length > 0) {
-    if (!containsStems(input.title, stems)) errors.push(`Pagrindinio raktažodžio „${input.primaryKeyword}“ nėra H1.`);
-    if (!containsStems(input.seoTitle, stems)) warnings.push(`Pagrindinio raktažodžio nėra seoTitle.`);
-    if (!containsStems(firstWords(input.body, 100), stems)) {
+    if (!containsKeyword(input.title, stems)) errors.push(`Pagrindinio raktažodžio „${input.primaryKeyword}“ nėra H1.`);
+    if (!containsKeyword(input.seoTitle, stems)) warnings.push(`Pagrindinio raktažodžio nėra seoTitle.`);
+    if (!containsKeyword(firstWords(input.body, 100), stems)) {
       warnings.push('Pagrindinio raktažodžio nėra pirmuose 100 žodžių.');
     }
     const h2s = headings(input.body).filter((heading) => heading.level === 2);
-    if (!h2s.some((heading) => containsStems(heading.text, stems))) {
+    if (!h2s.some((heading) => containsKeyword(heading.text, stems))) {
       warnings.push('Pagrindinio raktažodžio nėra nė viename H2.');
     }
     const asciiStems = stems.map((stem) => slugify(stem));

@@ -18,20 +18,24 @@ what to wait for / what to ignore" analysis, and honest limitations and risks.
    leave it out or say it is not yet known.
 2. Numbers, prices, versions, dates and availability are copied exactly from
    the fact sheet. Prices keep their original currency ("20 USD per mėnesį").
-3. Illustrative scenarios must read clearly as examples ("Pavyzdžiui,
+3. Any number with a unit (€, USD, %, min., val., sek., dienos, mėn.,
+   metai, kartai) must come from the fact sheet or house facts, or sit in a
+   sentence that is clearly an example (see 4). For advice without data, use
+   words, not numbers ("kelis variantus", not "3–5 variantus per 15 min.").
+4. Illustrative scenarios must read clearly as examples ("Pavyzdžiui,
    įsivaizduokime…", "Tarkime, …"); their numbers and outcomes are
    hypothetical and phrased conditionally. Every sentence with an example
    number must contain an example marker (pavyzdžiui, tarkime,
    įsivaizduokime).
-4. Opinions and recommendations are marked ("Mūsų nuomone…",
+5. Opinions and recommendations are marked ("Mūsų nuomone…",
    "Rekomenduojame…").
-5. Outbound links: only URLs from the fact sheet, as Markdown links on
+6. Outbound links: only URLs from the fact sheet, as Markdown links on
    descriptive Lithuanian anchor text. At most one short quote (under 15
    words) per source, in „…“ with attribution.
-6. Internal links: link to 1–3 of the provided existing articles where
+7. Internal links: link to 1–3 of the provided existing articles where
    genuinely relevant, using descriptive anchor text. Link to service pages
    only as given in the CTA hint.
-7. Follow the style guide exactly (typography, terminology, sentence-case
+8. Follow the style guide exactly (typography, terminology, sentence-case
    headings, absolute dates only, no hype, no emojis in headings).
 
 ## MDX format (the body you return)
@@ -72,11 +76,14 @@ what to wait for / what to ignore" analysis, and honest limitations and risks.
 
 - `title`: Lithuanian H1 containing the primary keyword naturally, sentence
   case, ideally under 70 characters.
-- `seoTitle`: at most 60 characters (count them), contains the primary
-  keyword, no site name.
+- `seoTitle` plus 2 `seoTitleAlternatives`: each at most 60 characters,
+  containing the primary keyword, no site name. Make the variants differ in
+  length (e.g. ~45, ~52, ~58 characters); code picks one that fits.
 - `slug`: short ASCII kebab-case from Lithuanian words without diacritics
   (ą→a, č→c, ę/ė→e, į→i, š→s, ų/ū→u, ž→z), containing the primary keyword.
-- `excerpt`: 140–160 characters (count them), a concrete reason to click.
+- `excerpt` plus 2 `excerptAlternatives`: each 140–160 characters, with a
+  concrete reason to click. Make the variants differ in length (e.g. ~142,
+  ~150, ~158 characters); code picks one that fits.
 - `faq`: 3–5 real questions (from the fact sheet's questions where
   possible) with 1–3 sentence answers based on the fact sheet.
 - `sourceUrls`: the fact-sheet URLs the article relies on, primary first.

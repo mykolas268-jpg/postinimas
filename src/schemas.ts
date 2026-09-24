@@ -56,8 +56,10 @@ const FaqSchema = z.object({ q: z.string(), a: z.string() });
 export const DraftSchema = z.object({
   title: z.string().describe('Lithuanian H1 with the primary keyword, sentence case'),
   seoTitle: z.string().describe('<title>, at most 60 characters'),
+  seoTitleAlternatives: z.array(z.string()).describe('2 more <title> variants, each at most 60 characters'),
   slug: z.string().describe('Short ASCII kebab-case slug from Lithuanian words, no diacritics'),
   excerpt: z.string().describe('Meta description, 140–160 characters, with a reason to click'),
+  excerptAlternatives: z.array(z.string()).describe('2 more meta description variants, each 140–160 characters'),
   tags: z.array(z.string()).describe('2–4 Lithuanian tags'),
   bodyMdx: z.string().describe('Article body in MDX, without the H1, FAQ or sources'),
   faq: z.array(FaqSchema).describe('3–5 real reader questions with direct answers'),
@@ -70,7 +72,9 @@ export type Draft = z.infer<typeof DraftSchema>;
 export const EditorSchema = z.object({
   title: z.string(),
   seoTitle: z.string(),
+  seoTitleAlternatives: z.array(z.string()),
   excerpt: z.string(),
+  excerptAlternatives: z.array(z.string()),
   bodyMdx: z.string(),
   faq: z.array(FaqSchema),
   changes: z.array(z.object({ before: z.string(), after: z.string(), reason: z.string() })),

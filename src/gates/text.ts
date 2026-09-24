@@ -101,4 +101,31 @@ export function containsStems(text: string, stems: string[]): boolean {
   return stems.every((stem) => lower.includes(stem));
 }
 
+/**
+ * Keyword present "naturally": all stems for 1–2 word keywords; for longer
+ * keywords one word may be missing or rephrased (Lithuanian word order and
+ * inflection make exact multi-word matches unnatural).
+ */
+export function containsKeyword(text: string, stems: string[]): boolean {
+  const lower = text.toLowerCase();
+  const found = stems.filter((stem) => lower.includes(stem)).length;
+  return stems.length <= 2 ? found === stems.length : found >= stems.length - 1;
+}
+
 export const EXAMPLE_MARKERS = /(pavyzd|pvz\.|tarkime|įsivaizduok|sakykime|iliustr|hipotetin)/i;
+
+/**
+ * Picks the best candidate for a length-limited field: the first one inside
+ * [min, max] that contains the keyword stems, else the first inside the
+ * range, else the one closest to it. Models count characters badly, so the
+ * writer supplies several variants and code chooses.
+ */
+export function chooseFitting(candidates: string[], min: number, max: number, stems: string[] = []): string {
+  const clean = candidates.map((candidate) => candidate.trim()).filter(Boolean);
+  const inRange = clean.filter((candidate) => candidate.length >= min && candidate.length <= max);
+  const withKeyword = inRange.find((candidate) => containsKeyword(candidate, stems));
+  if (withKeyword) return withKeyword;
+  if (inRange[0]) return inRange[0];
+  const distance = (text: string) => (text.length < min ? min - text.length : text.length > max ? text.length - max : 0);
+  return [...clean].sort((a, b) => distance(a) - distance(b))[0] ?? '';
+}

@@ -174,7 +174,9 @@ export async function edit(ctx: StepContext, draft: Draft): Promise<EditorOutput
     user: `Edit this article.\n\n${json({
       title: draft.title,
       seoTitle: draft.seoTitle,
+      seoTitleAlternatives: draft.seoTitleAlternatives,
       excerpt: draft.excerpt,
+      excerptAlternatives: draft.excerptAlternatives,
       bodyMdx: draft.bodyMdx,
       faq: draft.faq,
     })}`,

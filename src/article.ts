@@ -14,7 +14,7 @@ import {
 } from './gates/provenance.js';
 import { checkSeo } from './gates/seo.js';
 import { checkStructure } from './gates/structure.js';
-import { markdownLinks, wordCount } from './gates/text.js';
+import { chooseFitting, keywordStems, markdownLinks, wordCount } from './gates/text.js';
 import type { GateResult } from './gates/types.js';
 import type { LlmClient } from './llm/client.js';
 import { log } from './log.js';
@@ -104,7 +104,15 @@ export async function runArticle(request: ArticleRequest, options: ArticleRunOpt
   for (let attempt = 0; attempt <= config.writing.revisionLoops; attempt += 1) {
     attempts = attempt + 1;
     const draft = await write(ctx, { request, factSheet, registry, ...(previous ? { previous } : {}) });
-    const edited = await edit(ctx, draft);
+    const editorOutput = await edit(ctx, draft);
+    // Models count characters badly: pick the variant that fits the limits.
+    const stems = keywordStems(primaryKeyword);
+    const [minExcerpt, maxExcerpt] = config.writing.excerptLength;
+    const edited: EditorOutput = {
+      ...editorOutput,
+      excerpt: chooseFitting([editorOutput.excerpt, ...editorOutput.excerptAlternatives], minExcerpt, maxExcerpt, stems),
+      seoTitle: chooseFitting([editorOutput.seoTitle, ...editorOutput.seoTitleAlternatives], 20, config.writing.titleMax, stems),
+    };
     const slug = slugify(draft.slug || draft.title);
     fs.writeFileSync(path.join(outDir, `attempt-${attempts}.draft.mdx`), draft.bodyMdx);
     fs.writeFileSync(path.join(outDir, `attempt-${attempts}.edited.mdx`), edited.bodyMdx);

@@ -32,12 +32,14 @@ and FAQ:
   Markdown link targets, code blocks, the MDX components and their
   attributes, heading levels, the order of sections.
 - Do not add or remove facts. Do not add links.
-- Keep the seoTitle at most 60 characters and the excerpt 140–160
-  characters after your edits (count them).
+- Edit the `seoTitleAlternatives` and `excerptAlternatives` the same way
+  and return the same number of variants. Keep every seoTitle variant at
+  most 60 characters and every excerpt variant 140–160 characters.
 
 ## Output
 
-Return the full corrected title, seoTitle, excerpt, body (MDX) and FAQ, a
+Return the full corrected title, seoTitle (+ alternatives), excerpt (+
+alternatives), body (MDX) and FAQ, a
 list of the changes you made (before → after, reason in Lithuanian), and a
 list of `uncertainties`: language points you are not sure about, in
 Lithuanian, so the human reviewer can check them. Be honest — an empty

@@ -31,6 +31,24 @@ Date: 2026-09-24.
 | 1 | Code done in verslas#2 (CI, SEO, canonical www fix, content cleanup, policies, inquiry API). Waiting for merge; Vercel items deferred. |
 | 2 | Vertical slice built: `article` CLI, research → fact sheet (provenance-checked) → writer → Lithuanian editor → gates (Lithuanian/Hunspell, SEO, structure/MDX, link allowlist, fact-check + number check, links resolve) → up to 2 revisions → shadow draft PR workflow. 51 unit/e2e tests, offline fixture run, and the generated MDX passes the site's strict check and build. **Not yet run against the real API** (needs `ANTHROPIC_API_KEY` and `SITE_REPO_TOKEN`). |
 
+### Evaluation (owner goal: ≥ 70 % "accuracy")
+
+Definition: the share of eval topics (`config/eval-topics.yml`, 6 fixed
+topics) whose article passes **every** gate within the revision loop. A
+passing article has every factual claim supported by the fact sheet by
+construction; the report also shows first-attempt pass rate and claim
+accuracy. Gates are not relaxed to reach the number — only proven false
+positives are fixed.
+
+| Round | Date | Pass rate | Notes |
+| --- | --- | --- | --- |
+| 1 | 2026-09-24 | 0/6 — not run | `ANTHROPIC_API_KEY` secret missing; all jobs failed at the first call ($0). Harness verified end to end. |
+
+Pre-emptive fixes before round 2 (not yet measured): the writer supplies 3
+variants of `seoTitle`/`excerpt` and code picks one that fits the limits;
+multi-word keywords tolerate one rephrased word; `Callout` detection ignores
+attribute order; the writer prompt forbids unsourced numbers with units.
+
 ### Vercel phase checklist (last phase, owner actions)
 1. Check the plan and the firewall (the "AI Bots" managed ruleset set to Off or Log; Attack Challenge Mode off).
 2. Fix or delete `NEXT_PUBLIC_SITE_URL`. It currently has a leading tab and the apex host; the code already neutralises both.

@@ -175,3 +175,19 @@ describe('fact-check gate', () => {
     expect(result.errors).toHaveLength(4);
   });
 });
+
+describe('length-limited field chooser', () => {
+  it('picks a variant inside the range, preferring one with the keyword', async () => {
+    const { chooseFitting, containsKeyword, keywordStems } = await import('../src/gates/text.js');
+    const stems = keywordStems('AI video reklama');
+    expect(chooseFitting(['x'.repeat(170), 'AI video reklama ' + 'y'.repeat(130), 'z'.repeat(150)], 140, 160, stems)).toMatch(/^AI video reklama/);
+    expect(chooseFitting(['x'.repeat(170), 'z'.repeat(150)], 140, 160, stems)).toBe('z'.repeat(150));
+    expect(chooseFitting(['x'.repeat(175), 'y'.repeat(165)], 140, 160)).toBe('y'.repeat(165));
+    // 3-word keyword: one word may be rephrased; 2-word keywords need both
+    expect(containsKeyword('DI įrankių kainos verslui', keywordStems('DI įrankiai verslui kainos'))).toBe(true);
+    expect(containsKeyword('Kainos verslui', keywordStems('DI įrankiai verslui kainos'))).toBe(true);
+    expect(containsKeyword('Kainos', keywordStems('DI įrankiai verslui kainos'))).toBe(false);
+    expect(containsKeyword('Video be reklamos', keywordStems('video reklama'))).toBe(true);
+    expect(containsKeyword('Video be kainų', keywordStems('video reklama'))).toBe(false);
+  });
+});
