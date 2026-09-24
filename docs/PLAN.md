@@ -18,7 +18,18 @@ Date: 2026-09-24.
 | C1 | Primary goal of articles | **Video orders and the book.** The book is still being written, so its CTA is a waitlist, which needs a working form. | 2026-09-24 |
 | C2 | Phase order | Vertical slice first (D4 accepted) | 2026-09-24 |
 | C3 | Cadence | **4 articles/week** (owner's choice; the review-time risk in § 8.1 stands). Mix stays at the 75/25 default unless changed. | 2026-09-24 |
-| B2–B11 | Remaining spec questions | Open; needed before Phase 2. B4 (author and company details) and B5 (clusters and CTAs) also block parts of Phase 1. | open |
+| B1 (update) | Hosting | **Vercel Hobby, kept by the owner** (Vercel says Hobby is non-commercial only; risk accepted by the owner). Vercel is connected to `verslas` and builds PR previews [verified]. **All Vercel settings are deferred to the last phase.** | 2026-09-24 |
+| Defaults | B2, B3, B6, B7, B11 and the C3 mix | The owner said "do everything except Vercel", so the recommended defaults apply: shadow 2 weeks → approval; Telegram; $150/month cap ($12 per run, $8 per article); DI in body text, AI in product names and keywords; training bots allowed; 75/25 mix. The owner can override any of these at any time. | 2026-09-24 |
+| Hubs | Hub pages per cluster | **Deferred** until a cluster has ≥ 3 articles. With 2 articles, hubs would be thin pages. | 2026-09-24 |
+| Form | Inquiry delivery | Server delivery via Telegram, env-gated, activated in the Vercel phase. **GDPR caveat:** Telegram is outside the EU, so the privacy policy must name it, and an EU-based email provider is the cleaner alternative. Decide at activation. | 2026-09-24 |
+| Open | B4 (bio, photo, links, company code and address), B5 (clusters/CTAs), B8 (GSC/Bing access), B9 (book as voice reference; book title and timing for its waitlist), B10 (topics to never cover), price-range provenance | Needed from the owner | open |
+
+### Vercel phase checklist (last phase, owner actions)
+1. Check the plan and the firewall (the "AI Bots" managed ruleset set to Off or Log; Attack Challenge Mode off).
+2. Fix or delete `NEXT_PUBLIC_SITE_URL`. It currently has a leading tab and the apex host; the code already neutralises both.
+3. Set `TELEGRAM_BOT_TOKEN` and `TELEGRAM_CHAT_ID` to activate `/api/uzklausa`, then update `/privatumo-politika` to name the provider.
+4. Enable Web Analytics, add `@vercel/analytics`, and update the privacy policy.
+5. After the first production deploy, confirm the IndexNow workflow ran (the environment name must start with `Production`).
 
 Legend used throughout:
 
