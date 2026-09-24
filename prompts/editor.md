@@ -31,6 +31,9 @@ and FAQ:
 - Numbers, prices, dates, versions, product and company names, URLs and
   Markdown link targets, code blocks, the MDX components and their
   attributes, heading levels, the order of sections.
+- The key words of the required section headings, which code checks:
+  "Kam … aktualu" (or "tinka"), "Ką … daryti … dabar", "rizikos" /
+  "ribojimai". Fix grammar around them, but keep them.
 - Do not add or remove facts. Do not add links.
 - Edit the `seoTitleAlternatives` and `excerptAlternatives` the same way
   and return the same number of variants. Keep every seoTitle variant at

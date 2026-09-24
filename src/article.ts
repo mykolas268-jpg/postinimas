@@ -141,7 +141,9 @@ export async function runArticle(request: ArticleRequest, options: ArticleRunOpt
     factCheckResult = null;
     if (gates.every((gate) => gate.passed)) {
       factCheckResult = await factCheck(ctx, { title: edited.title, excerpt: edited.excerpt, bodyMdx: edited.bodyMdx, faq: edited.faq }, factSheet);
-      gates.push(checkFactCheck(factCheckResult, factSheet, edited.bodyMdx, config.houseFacts));
+      // Numbers in the title, excerpt and FAQ answers need a source as much as those in the body.
+      const readerText = [edited.title, edited.excerpt, edited.bodyMdx, ...edited.faq.flatMap((item) => [item.q, item.a])].join('\n\n');
+      gates.push(checkFactCheck(factCheckResult, factSheet, readerText, config.houseFacts));
     }
     if (options.checkLinks && gates.every((gate) => gate.passed)) {
       const external = [

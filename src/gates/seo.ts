@@ -37,7 +37,7 @@ export function checkSeo(input: SeoInput, config: Config, registry: RegistryEntr
   if (input.seoTitle.length > writing.titleMax) {
     errors.push(`seoTitle ${input.seoTitle.length} simb. (daugiausia ${writing.titleMax}): „${input.seoTitle}“`);
   }
-  if (input.title.length > 90) warnings.push(`H1 ilga (${input.title.length} simb.).`);
+  if (input.title.length > 90) warnings.push(`H1 antraštė ilga (${input.title.length} simb.).`);
   const [minExcerpt, maxExcerpt] = writing.excerptLength;
   if (input.excerpt.length < minExcerpt || input.excerpt.length > maxExcerpt) {
     errors.push(`Aprašymas (excerpt) ${input.excerpt.length} simb. — reikia ${minExcerpt}–${maxExcerpt}.`);

@@ -11,7 +11,7 @@ const noSpell: SpellChecker = () => [];
 const lt = (body: string, extra: Partial<Parameters<typeof checkLithuanian>[0]> = {}) =>
   checkLithuanian(
     { title: 'Antraštė', seoTitle: 'Antraštė', excerpt: 'Aprašymas.', body, faq: [], ...extra },
-    { glossary: pc.glossary, banned: pc.banned, dash: '—', spellcheck: noSpell },
+    { glossary: pc.glossary, banned: pc.banned, dash: '—', spellcheck: noSpell, english: () => new Set() },
   );
 
 describe('Lithuanian gate', () => {
@@ -29,9 +29,15 @@ describe('Lithuanian gate', () => {
     ['Nuolaida 10% visiems.', /Procentai/],
     ['Jis pilnai sutiko.', /Vengtina frazė „pilnai“/],
     ['Mums reikia daugiau kontento.', /Terminas „kontento“/],
-    ['This is the best tool for your business and it can help you.', /angliškų sakinį/],
+    ['This is the best tool for your business and it can help you.', /anglišką sakinį/],
   ])('flags %s', (text, pattern) => {
     expect(lt(text).errors.join('\n')).toMatch(pattern);
+  });
+
+  // An unquoted comma in the YAML once turned "nesvarbu, ar esate" into a ban on "nesvarbu".
+  it('bans the cliché, not the ordinary word', () => {
+    expect(lt('Tai nesvarbu, kai kalbame apie kainą.').errors).toEqual([]);
+    expect(lt('Nesvarbu, ar esate kavinė, ar parduotuvė.').errors.join()).toMatch(/nesvarbu, ar esate/);
   });
 
   it('ignores quoted text and code', () => {
@@ -40,6 +46,22 @@ describe('Lithuanian gate', () => {
 
   it('flags English Title Case headings', () => {
     expect(lt('Tekstas.', { title: 'Kaip Sukurti Reklaminį Video' }).errors.join()).toMatch(/Title Case/);
+  });
+
+  // Comparison articles name plans in H3s; lowercasing them would be wrong.
+  it('allows product-name headings but not Lithuanian Title Case', () => {
+    const body = 'Tekstas.\n\n### Google Workspace Business Standard\n\nTekstas.\n\n### Kainos Ir Planai Verslui\n\nTekstas.';
+    const spell: SpellChecker = () => ['Google', 'Workspace', 'Business', 'Standard'].map((word) => ({ word, suggestions: [] }));
+    const run = (spellcheck: SpellChecker, english: (words: string[]) => Set<string> | null) =>
+      checkLithuanian(
+        { title: 'Antraštė', seoTitle: 'Antraštė', excerpt: 'Aprašymas.', body, faq: [] },
+        { glossary: pc.glossary, banned: pc.banned, dash: '—', spellcheck, english },
+      );
+    const result = run(spell, (words) => new Set(words.filter((word) => word !== 'Kainos' && word !== 'Planai' && word !== 'Verslui')));
+    expect(result.errors).toEqual(['Antraštė angliškai „Title Case“: „Kainos Ir Planai Verslui“ — rašyk sakinio stiliumi.']);
+    expect(result.warnings.join()).toMatch(/Google Workspace Business Standard/);
+    // Without the dictionaries both stay errors (fail closed).
+    expect(run(() => null, () => null).errors.filter((error) => /Title Case/.test(error))).toHaveLength(2);
   });
 
   it('classifies likely typos as errors and unknown names as warnings', () => {
@@ -130,8 +152,21 @@ Tekstas.`;
     [good.replace('type="info" title="Trumpai"', 'type="info" title="Santrauka"'), /Trumpai/],
     [good.replace('## Ką daryti dabar', '## Kas toliau'), /Ką daryti dabar/],
     ['## Antraštė pradžioje\n\n' + good, /atsakymu/],
+    // MDX parse failures confirmed with the site's check:content --strict
+    [good + '\n\nVienas skliaustas { be pabaigos.', /riestiniai/],
+    [good + '\n\nKaina <15 žodžių.', /„<15/],
+    [good + '\n\n| Planas | Kaina |\n| --- | --- |\n| Pro | <20 USD |', /„<20/],
+    [good + '\n\nJei 5 <= 10.', /„<=/],
+    [good + '\n\nRodyklė <- atgal.', /„<-/],
+    [good + '\n\n<!-- komentaras -->', /„<!--/],
+    [good + '\n\nEilutės pabaiga <', /„<“/],
   ])('rejects unsafe or incomplete bodies (%#)', (body, pattern) => {
     expect(checkStructure({ body, isLegal: false }).errors.join('\n')).toMatch(pattern);
+  });
+
+  it('accepts MDX-safe comparison signs, arrows and code', () => {
+    const body = good + '\n\nKaina < 15 žodžių, jei a > b. Rodyklė -> pirmyn. Kode `<15` ir `{x}`.\n\n```text\n<15 {x}\n```';
+    expect(checkStructure({ body, isLegal: false }).errors).toEqual([]);
   });
 });
 
@@ -185,6 +220,16 @@ describe('fact-check gate', () => {
     expect(unsupportedNumbers('Kaina — 25 USD per mėnesį.', factSheet)).toHaveLength(1);
     expect(unsupportedNumbers('Pavyzdžiui, tarkime, sutaupytum 50 €.', factSheet)).toEqual([]);
     expect(unsupportedNumbers('Video kainuoja 99 €.', factSheet, config.houseFacts)).toEqual([]);
+  });
+
+  it('matches amounts written with tūkst. / mln. against full numbers and back', () => {
+    const sheet = (claim: string): FactSheet => ({ ...factSheet, claims: [{ ...factSheet.claims[0]!, claim, value: '' }] });
+    expect(unsupportedNumbers('Parama — iki 50 tūkst. €.', sheet('Grants up to EUR 50,000.'))).toEqual([]);
+    expect(unsupportedNumbers('Biudžetas — 1,5 mln. €.', sheet('Budget of EUR 1 500 000.'))).toEqual([]);
+    expect(unsupportedNumbers('Biudžetas — 2 000 000 €.', sheet('Biudžetas 2 mln. Eur.'))).toEqual([]);
+    expect(unsupportedNumbers('Kaina — 1 200,50 €.', sheet('Costs EUR 1,200.50.'))).toEqual([]);
+    expect(unsupportedNumbers('Parama — iki 60 tūkst. €.', sheet('Grants up to EUR 50,000.'))).toHaveLength(1);
+    expect(unsupportedNumbers('Kaina — 1 300,50 €.', sheet('Costs EUR 1,200.50.'))).toHaveLength(1);
   });
 
   it('fails on unsupported, contradicted and unmarked examples', () => {

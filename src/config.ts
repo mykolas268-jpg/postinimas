@@ -107,7 +107,7 @@ const GlossarySchema = z.object({
       preferred: z.string(),
       avoid: z.array(z.string()).default([]),
       note: z.string().optional(),
-    }),
+    }).strict(),
   ),
   spelling: z.object({
     stems: z.array(z.string()).default([]),
@@ -117,7 +117,9 @@ const GlossarySchema = z.object({
 export type Glossary = z.infer<typeof GlossarySchema>;
 
 const BannedSchema = z.object({
-  phrases: z.array(z.object({ phrase: z.string(), use: z.string() })),
+  // strict(): an unquoted comma in a YAML flow map ("{ phrase: a, b, use: c }")
+  // silently turns "b" into a key; fail loudly instead.
+  phrases: z.array(z.object({ phrase: z.string(), use: z.string() }).strict()),
 });
 export type BannedPhrase = z.infer<typeof BannedSchema>['phrases'][number];
 

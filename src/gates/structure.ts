@@ -23,12 +23,18 @@ export function checkStructure(input: StructureInput): GateResult {
   // MDX safety
   if (/^\s*(import|export)\s/m.test(code)) errors.push('MDX: import/export neleidžiami.');
   const withoutInlineCode = code.replace(/`[^`\n]*`/g, '');
-  if (/\{[^}\n]*\}/.test(withoutInlineCode)) {
+  // A lone "{" breaks the MDX parse as surely as "{…}" (checked against the site's `check:content --strict`).
+  if (/\{/.test(withoutInlineCode)) {
     errors.push('MDX: riestiniai skliaustai {…} už kodo bloko neleidžiami (JS išraiška).');
+  }
+  // MDX reads "<" as a JSX tag unless a space follows: "<15", "<=", "<-", "<!-- -->" all fail the parse.
+  const bareAngle = withoutInlineCode.match(/<(?![ \t]|\/?[A-Za-z])\S{0,6}/);
+  if (bareAngle) {
+    errors.push(`MDX: „${bareAngle[0]}“ — po „<“ reikia tarpo („< 15“) arba rašyk žodžiais („mažiau nei 15“); HTML komentarai neleidžiami.`);
   }
   for (const match of withoutInlineCode.matchAll(/<\/?([A-Za-z][\w.]*)/g)) {
     const name = match[1] ?? '';
-    if (!ALLOWED_COMPONENTS.has(name)) errors.push(`MDX: komponentas ar HTML žymė <${name}> neleidžiama.`);
+    if (!ALLOWED_COMPONENTS.has(name)) errors.push(`MDX: neleidžiama žymė <${name}> (leidžiami tik Callout ir ProseImage).`);
   }
   for (const match of withoutInlineCode.matchAll(/<Callout\s+type="([^"]*)"/g)) {
     if (!CALLOUT_TYPES.has(match[1] ?? '')) errors.push(`Callout type="${match[1]}" neleidžiamas (info, tip, warning).`);
@@ -49,15 +55,20 @@ export function checkStructure(input: StructureInput): GateResult {
     errors.push('Trūksta <Callout type="info" title="Trumpai"> bloko.');
   } else {
     const bullets = (trumpai[2] ?? '').split('\n').filter((line) => /^\s*[-*]\s+\S/.test(line)).length;
-    if (bullets < 3 || bullets > 5) errors.push(`„Trumpai“ bloke ${bullets} punktai (reikia 3–5).`);
+    if (bullets < 3 || bullets > 5) errors.push(`„Trumpai“ bloko punktų: ${bullets} (reikia 3–5).`);
     if ((trumpai.index ?? 0) > 1500) warnings.push('„Trumpai“ blokas toli nuo pradžios.');
   }
 
   // Required sections
   const h2 = headings(input.body).filter((heading) => heading.level === 2);
   const has = (pattern: RegExp) => h2.some((heading) => pattern.test(heading.text));
-  if (!has(/kam\s+(tai\s+)?aktualu/i)) errors.push('Trūksta skyriaus „Kam tai aktualu, o kam ne“.');
-  if (!has(/ką\s+daryti\s+dabar/i)) errors.push('Trūksta skyriaus „Ką daryti dabar“.');
+  // Natural variants count ("Kam šis įrankis tinka, o kam ne?", "Ką verta daryti jau dabar?").
+  if (!has(/kam\s+(?:[\p{L},]+\s+){0,3}(?:aktual|tink|naudinga|verta)|o\s+kam\s+ne/iu)) {
+    errors.push('Trūksta skyriaus „Kam tai aktualu, o kam ne“.');
+  }
+  if (!has(/ką\s+(?:[\p{L},]+\s+){0,2}daryti(?:\s+[\p{L},]+){0,2}\s+dabar/iu)) {
+    errors.push('Trūksta skyriaus „Ką daryti dabar“.');
+  }
   if (!has(/rizik|ribojim|apribojim|trūkum/i)) errors.push('Trūksta skyriaus apie ribojimus ir rizikas.');
   if (/^##\s+(D\.?U\.?K\.?|Dažniausi klausimai|Šaltiniai)\s*$/im.test(code)) {
     errors.push('DUK ir šaltiniai rašomi į frontmatter (faq, sources), ne į tekstą.');
@@ -66,7 +77,7 @@ export function checkStructure(input: StructureInput): GateResult {
   // Question-style H2s
   const questions = h2.filter((heading) => heading.text.trim().endsWith('?')).length;
   if (h2.length >= 4 && questions < Math.ceil(h2.length / 3)) {
-    warnings.push(`Tik ${questions} iš ${h2.length} H2 suformuluoti klausimu.`);
+    warnings.push(`H2 klausimo forma: ${questions} iš ${h2.length} (rekomenduojama ≥ ${Math.ceil(h2.length / 3)}).`);
   }
 
   // Legal note

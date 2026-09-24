@@ -9,7 +9,7 @@
 
 phrases:
   # VLKK Kalbos klaidų sąrašas
-  - { phrase: pilnai, use: visiškai, visai }
+  - { phrase: pilnai, use: "visiškai, visai" }
   - { phrase: dėka, use: "dėl, padedant, per" }
   - { phrase: tame tarpe, use: "iš jų, tarp jų, kartu" }
   - { phrase: tame skaičiuje, use: "iš jų, tarp jų" }
@@ -37,6 +37,6 @@ phrases:
   - { phrase: ateitis jau čia, use: "(praleisti)" }
   - { phrase: pasinerkime, use: "(praleisti)" }
   - { phrase: šiame straipsnyje sužinosite, use: "(pradėk nuo atsakymo)" }
-  - { phrase: nesvarbu, ar esate, use: "(kreipkis į konkretų skaitytoją)" }
+  - { phrase: "nesvarbu, ar esate", use: "(kreipkis į konkretų skaitytoją)" }
   - { phrase: skaitmeniniame amžiuje, use: "(praleisti)" }
   - { phrase: sparčiai besikeičiančiame pasaulyje, use: "(praleisti)" }

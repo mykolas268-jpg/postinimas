@@ -60,6 +60,24 @@ pipeline format (no summary box, no FAQ).
 Scheduling: the hourly `eval.yml` cron first fired at 15:51 UTC, about five
 hours after it was added; it waits quietly until the key exists.
 
+Offline stress test of the gates (2026-09-24, no API), each case reproduced
+before the fix and covered by a test:
+
+| Finding | Kind | Fix |
+| --- | --- | --- |
+| `<15`, `<=`, `<-`, `<!-- -->` and a lone `{` pass our gate but fail the site's MDX parse (whole run lost in verify) | missed error | structure gate rejects them; writer prompt says how to write them |
+| Product-name H3s ("Google Workspace Business Standard") failed as English Title Case | false positive | error only when a capitalised word is Lithuanian (dictionary check, fails closed) |
+| Natural section headings ("Kam tai tinka, o kam ne?", "Ką verta daryti dabar?") failed although the prompt allowed "wording may vary" | prompt/gate mismatch | gate accepts inflected variants; writer and editor prompts name the words code checks |
+| "50 tūkst. €" vs "EUR 50,000", "1,5 mln." vs "1 500 000" flagged as unsourced numbers | false positive | scale words normalised on both sides; different values still flagged |
+| Numbers in the title, excerpt and FAQ were never number-checked | missed error | the number check covers all reader-visible text |
+| `?uri=CELEX:…` vs `CELEX%3A…`, http vs https, `/a/?x` vs `/a?x` treated as different URLs (facts from EUR-Lex could be dropped as "not retrieved") | false positive | URL comparison key re-serialises the query and path |
+| `banned-phrases.yml`: an unquoted comma banned the plain word "nesvarbu" (meant: "nesvarbu, ar esate") and truncated "pilnai" advice | config bug | quoted; config schema is now strict, so this fails at load |
+| Owner-facing messages: "į angliškų sakinį", number agreement ("1 punktai"), English provenance messages | language | fixed; provenance messages in Lithuanian |
+
+Not changed on purpose: the H1 keyword check still requires the keyword's
+own words ("žymėti" does not count for "žymėjimas"). That is an SEO rule,
+not a false positive; the writer prompt now says so explicitly.
+
 ### Vercel phase checklist (last phase, owner actions)
 1. Check the plan and the firewall (the "AI Bots" managed ruleset set to Off or Log; Attack Challenge Mode off).
 2. Fix or delete `NEXT_PUBLIC_SITE_URL`. It currently has a leading tab and the apex host; the code already neutralises both.

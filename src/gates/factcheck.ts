@@ -16,32 +16,60 @@ function digits(value: string): string {
   return value.replace(/[^\d]/g, '');
 }
 
-/** Every number in a text, normalised to its digits ("1 200,50" → "120050"). */
+const SCALE: [RegExp, number][] = [
+  [/^\s?(?:tūkst\.?|thousand)/iu, 1e3],
+  [/^\s?(?:mln\.?|million|milijon)/iu, 1e6],
+  [/^\s?(?:mlrd\.?|billion|milijard)/iu, 1e9],
+];
+
+/** "1,5" / "1.5" → 1.5; "1 500" / "1,500" → 1500 (a 3-digit group is thousands). */
+function numericValue(raw: string): number | null {
+  const compact = raw.replace(/\s/g, '');
+  const grouped = compact.match(/^(\d{1,3}(?:[.,]\d{3})+|\d+)(?:[.,](\d{1,2}))?$/);
+  if (!grouped) return null;
+  return Number(`${grouped[1]!.replace(/[.,]/g, '')}.${grouped[2] ?? '0'}`);
+}
+
+/** A number's digits and, when a scale word follows it, its full value. */
+function valuesAt(text: string, index: number, raw: string): string[] {
+  const values = [digits(raw)];
+  const scale = SCALE.find(([pattern]) => pattern.test(text.slice(index + raw.length)))?.[1];
+  const value = numericValue(raw);
+  if (scale && value !== null) values.push(String(Math.round(value * scale)));
+  return values;
+}
+
+/**
+ * Every number in a text, normalised to its digits ("1 200,50" → "120050").
+ * Amounts with a scale word also yield their full value, so "50 tūkst. €",
+ * "EUR 50,000" and "50 000 €" match each other, as do "1,5 mln." and "1 500 000".
+ */
 export function numbersIn(text: string): Set<string> {
   const found = new Set<string>();
   for (const match of text.matchAll(/\d(?:[\d\s.,]*\d)?/g)) {
-    found.add(digits(match[0]));
+    for (const value of valuesAt(text, match.index ?? 0, match[0])) found.add(value);
     // "20–30" and "1,5–2" are two numbers; so are thousands written "1,200" vs "1 200".
     for (const part of match[0].split(/\s+/)) if (/\d/.test(part)) found.add(digits(part));
   }
   return found;
 }
 
-export function unsupportedNumbers(body: string, factSheet: FactSheet, houseFacts: string[] = []): string[] {
+/** `text` is everything readers see: title, excerpt, MDX body and FAQ. */
+export function unsupportedNumbers(text: string, factSheet: FactSheet, houseFacts: string[] = []): string[] {
   const known = new Set<string>();
-  for (const text of [
+  for (const source of [
     ...factSheet.claims.map((claim) => `${claim.claim} ${claim.value ?? ''}`),
     ...houseFacts,
   ]) {
-    for (const number of numbersIn(text)) known.add(number);
+    for (const number of numbersIn(source)) known.add(number);
   }
   const problems: string[] = [];
-  for (const sentence of sentences(withoutQuotations(prose(body)))) {
+  for (const sentence of sentences(withoutQuotations(prose(text)))) {
     if (EXAMPLE_MARKERS.test(sentence)) continue;
     for (const match of sentence.matchAll(NUMBER_WITH_UNIT)) {
-      const number = digits(match[0]);
-      if (number.length === 0) continue;
-      if (!known.has(number)) {
+      const raw = match[0].replace(/[^\d\s.,][\s\S]*$/, '').replace(/[\s.,]+$/, ''); // "1 200,50 €" → "1 200,50"
+      if (digits(raw).length === 0) continue;
+      if (!valuesAt(sentence, match.index ?? 0, raw).some((value) => known.has(value))) {
         problems.push(`Skaičius „${match[0].trim()}“ nerastas faktų lape: „${sentence.slice(0, 140)}“`);
       }
     }
@@ -52,7 +80,7 @@ export function unsupportedNumbers(body: string, factSheet: FactSheet, houseFact
 export function checkFactCheck(
   result: FactCheckOutput,
   factSheet: FactSheet,
-  body: string,
+  text: string,
   houseFacts: string[] = [],
 ): GateResult {
   const errors: string[] = [];
@@ -86,6 +114,6 @@ export function checkFactCheck(
     }
   }
 
-  errors.push(...unsupportedNumbers(body, factSheet, houseFacts));
+  errors.push(...unsupportedNumbers(text, factSheet, houseFacts));
   return gateResult('factcheck', errors, warnings);
 }

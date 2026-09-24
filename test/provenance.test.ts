@@ -13,6 +13,16 @@ const seen = JSON.parse(fs.readFileSync(path.join(fixtures, 'article', 'research
 describe('provenance', () => {
   it('normalises URLs and domains', () => {
     expect(normalizeUrl('https://www.example.com/a/?utm_source=x#top')).toBe('https://example.com/a');
+    // Same page written differently by the research and the fact-sheet step
+    for (const [a, b] of [
+      ['https://eur-lex.europa.eu/legal-content/LT/TXT/?uri=CELEX:32024R1689', 'https://eur-lex.europa.eu/legal-content/LT/TXT/?uri=CELEX%3A32024R1689'],
+      ['https://www.inovacijuagentura.lt/priemonės/', 'https://inovacijuagentura.lt/priemon%C4%97s'],
+      ['http://example.lt/a', 'https://example.lt/a'],
+      ['https://example.lt/a/?x=1&y=2', 'https://example.lt/a?y=2&x=1'],
+    ]) {
+      expect(normalizeUrl(a!)).toBe(normalizeUrl(b!));
+    }
+    expect(normalizeUrl('https://example.lt/a?x=1')).not.toBe(normalizeUrl('https://example.lt/a?x=2'));
     expect(siteDomain('https://vdai.lrv.lt/lt/x')).toBe('lrv.lt');
     expect(siteDomain('https://news.bbc.co.uk/x')).toBe('bbc.co.uk');
   });

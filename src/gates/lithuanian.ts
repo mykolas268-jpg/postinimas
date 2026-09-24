@@ -134,6 +134,12 @@ export function checkLithuanian(input: LithuanianInput, options: LithuanianOptio
     warnings.push('Sakinio brūkšnys „ – “ — svetainėje naudojamas „ — “.');
   }
 
+  // Spelling runs first: the heading check below reuses what Hunspell knows.
+  const spellcheck = options.spellcheck ?? hunspellLt;
+  const english = options.english ?? hunspellEn;
+  const misspellings = spellcheck(allProse);
+  const unknownToLt = misspellings === null ? null : new Set(misspellings.map((item) => item.word.toLowerCase()));
+
   // Headings: sentence case --------------------------------------------------
   const knownCapitalised = new Set(options.glossary.spelling.words.map((word) => word.toLowerCase()));
   for (const heading of [{ text: input.title }, ...headings(input.body)]) {
@@ -145,7 +151,19 @@ export function checkLithuanian(input: LithuanianInput, options: LithuanianOptio
         !/^(Lietuv|Vilni|Kaun|Klaipėd|Europ|ES$)/.test(word),
     );
     if (headingWords.length >= 3 && capitalised.length === headingWords.length) {
-      errors.push(`Antraštė angliškai „Title Case“: „${heading.text}“ — rašyk sakinio stiliumi.`);
+      // "Kaip Sukurti Reklaminį Video" is Title Case; "Google Workspace Business
+      // Standard" is a product name. Only Lithuanian words make it an error;
+      // without the dictionaries it stays an error (fail closed).
+      const englishWords = unknownToLt === null ? null : english(capitalised);
+      const lithuanian = capitalised.some(
+        (word) =>
+          LT_LETTERS.test(word) ||
+          unknownToLt === null ||
+          englishWords === null ||
+          (!unknownToLt.has(word.toLowerCase()) && !englishWords.has(word)),
+      );
+      if (lithuanian) errors.push(`Antraštė angliškai „Title Case“: „${heading.text}“ — rašyk sakinio stiliumi.`);
+      else warnings.push(`Visi antraštės žodžiai iš didžiosios raidės: „${heading.text}“ — gerai, jei tai produkto pavadinimas.`);
     } else if (capitalised.length >= 2) {
       warnings.push(`Antraštėje daug didžiųjų raidžių: „${heading.text}“ — patikrink, ar tai tikriniai vardai.`);
     }
@@ -168,15 +186,15 @@ export function checkLithuanian(input: LithuanianInput, options: LithuanianOptio
   for (const sentence of sentences(styleText)) {
     const tokens = words(sentence).map((word) => word.toLowerCase());
     if (tokens.length < 6 || LT_LETTERS.test(sentence)) continue;
-    const english = tokens.filter((token) => ENGLISH_STOP.has(token)).length;
-    if (english / tokens.length >= 0.25) {
-      errors.push(`Panašu į angliškų sakinį: „${sentence.slice(0, 120)}“.`);
+    const englishStops = tokens.filter((token) => ENGLISH_STOP.has(token)).length;
+    if (englishStops / tokens.length >= 0.25) {
+      errors.push(
+        `Panašu į anglišką sakinį: „${sentence.slice(0, 120)}“ — išversk; jei tai užklausos (prompt) pavyzdys, dėk jį į \`kodą\` arba kodo bloką.`,
+      );
     }
   }
 
   // Spelling (Hunspell) -----------------------------------------------------
-  const spellcheck = options.spellcheck ?? hunspellLt;
-  const misspellings = spellcheck(allProse);
   let skipped: string | undefined;
   if (misspellings === null) {
     skipped = 'hunspell (lt_LT) neįdiegtas — rašyba netikrinta';
@@ -207,10 +225,10 @@ export function checkLithuanian(input: LithuanianInput, options: LithuanianOptio
     }
     // A valid English word is a term or an example, not a Lithuanian typo.
     // Without the en_US dictionary every candidate stays an error (fail closed).
-    const english = (options.english ?? hunspellEn)(typos.map((typo) => typo.word));
-    if (english === null && typos.length > 0) warnings.push('hunspell (en_US) neįdiegtas — angliški terminai laikomi klaidomis');
+    const englishTypos = english(typos.map((typo) => typo.word));
+    if (englishTypos === null && typos.length > 0) warnings.push('hunspell (en_US) neįdiegtas — angliški terminai laikomi klaidomis');
     for (const { word, closest } of typos) {
-      if (english?.has(word)) warnings.push(`Angliškas žodis „${word}“ — patikrink, ar jis čia reikalingas.`);
+      if (englishTypos?.has(word)) warnings.push(`Angliškas žodis „${word}“ — patikrink, ar jis čia reikalingas.`);
       else errors.push(`Galima rašybos klaida: „${word}“ → „${closest}“?`);
     }
   }

@@ -9,14 +9,19 @@ import { markdownLinks } from './text.js';
  * it invented. Claims need a primary source or two independent domains.
  */
 
+/** Comparison key for URLs — never written to the article (sources keep their original URL). */
 export function normalizeUrl(url: string): string {
   try {
     const parsed = new URL(url.trim());
     parsed.hash = '';
+    if (parsed.protocol === 'http:') parsed.protocol = 'https:';
     for (const key of [...parsed.searchParams.keys()]) {
       if (/^utm_|^(fbclid|gclid|ref)$/i.test(key)) parsed.searchParams.delete(key);
     }
+    // Re-serialising the query makes "?uri=CELEX:32024R1689" and "?uri=CELEX%3A32024R1689" equal.
+    parsed.searchParams.sort();
     parsed.hostname = parsed.hostname.replace(/^www\./, '');
+    if (parsed.pathname.length > 1) parsed.pathname = parsed.pathname.replace(/\/+$/, '');
     const text = parsed.toString();
     return text.endsWith('/') ? text.slice(0, -1) : text;
   } catch {
@@ -78,19 +83,24 @@ export function sanitizeFactSheet(factSheet: FactSheet, seen: SeenSource[]): San
   return { factSheet: { ...factSheet, claims, unknowns }, droppedSources, demotedClaims };
 }
 
+const DEMOTION_LT: Record<string, string> = {
+  'no retrieved source': 'nė vienas šaltinis nebuvo atsisiųstas',
+  'needs a primary source or 2 independent domains': 'reikia pirminio šaltinio arba 2 nepriklausomų domenų',
+};
+
 export function checkProvenance(sanitized: SanitizedFactSheet, minClaims = 5): GateResult {
   const errors: string[] = [];
   const warnings: string[] = [];
   if (sanitized.factSheet.claims.length < minClaims) {
     errors.push(
-      `Only ${sanitized.factSheet.claims.length} verified claims (minimum ${minClaims}) — not enough to write an article.`,
+      `Patvirtintų faktų: ${sanitized.factSheet.claims.length} (reikia bent ${minClaims}) — straipsniui rašyti per mažai.`,
     );
   }
   for (const url of new Set(sanitized.droppedSources)) {
-    warnings.push(`Dropped a source the research never retrieved: ${url}`);
+    warnings.push(`Pašalintas šaltinis, kurio tyrimas neatsisiuntė: ${url}`);
   }
   for (const claim of sanitized.demotedClaims) {
-    warnings.push(`Claim ${claim.id} unusable (${claim.reason}): ${claim.claim}`);
+    warnings.push(`Faktas ${claim.id} nenaudojamas (${DEMOTION_LT[claim.reason] ?? claim.reason}): ${claim.claim}`);
   }
   return gateResult('provenance', errors, warnings);
 }

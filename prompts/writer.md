@@ -56,16 +56,23 @@ what to wait for / what to ignore" analysis, and honest limitations and risks.
   (3–5 bullets; keep the blank lines inside the Callout.)
 - H2s phrased as the real questions readers ask; each section opens with a
   direct 1–2 sentence answer, then details, so it stands alone when quoted.
-- Required H2 sections (wording may vary slightly):
-  "Kam tai aktualu, o kam ne", "Ką daryti dabar" (with what to do now / what
-  to wait for / what to ignore), and a section on limitations and risks
-  (e.g. "Kokie ribojimai ir rizikos?").
+- Required H2 sections. Code checks the heading words, so keep them:
+  - who it is for: the heading contains "Kam … aktualu" (or "tinka"), e.g.
+    "Kam tai aktualu, o kam ne?";
+  - what to do: the heading contains "Ką … daryti … dabar", e.g. "Ką daryti
+    dabar?" (cover what to do now / what to wait for / what to ignore);
+  - limitations and risks: the heading contains "rizikos" or "ribojimai",
+    e.g. "Kokie ribojimai ir rizikos?".
 - Use tables where they help (availability, prices, comparisons).
 - Allowed components: `<Callout type="info|tip|warning" title="...">` with
   blank lines around its content, and nothing else. No other JSX or HTML, no
   `import`/`export`, no curly braces `{}` outside fenced code blocks.
   Templates and prompts go in fenced code blocks with a title, e.g.
   ```text title="Užklausos šablonas"
+  Short English prompt examples, UI labels and commands go in `inline code`,
+  also inside tables. English sentences in plain prose fail the language
+  check. Never write "<" directly before a digit or symbol ("<15"): use
+  words ("mažiau nei 15") or a space ("< 15").
 - Do not include the FAQ or a sources list in the body — return them in the
   `faq` and `sourceUrls` fields; the site renders them.
 - For legal or regulatory topics add
@@ -75,7 +82,9 @@ what to wait for / what to ignore" analysis, and honest limitations and risks.
 ## Metadata you return
 
 - `title`: Lithuanian H1 containing the primary keyword naturally, sentence
-  case, ideally under 70 characters.
+  case, ideally under 70 characters. Every word of the keyword must appear;
+  inflected forms count ("žymėjimas" → "žymėjimo"), other words from the same
+  root do not ("žymėti", "diegti").
 - `seoTitle` plus 2 `seoTitleAlternatives`: each at most 60 characters,
   containing the primary keyword, no site name. Make the variants differ in
   length (e.g. ~45, ~52, ~58 characters); code picks one that fits.
