@@ -1,0 +1,90 @@
+# Preferred terms. `avoid` variants fail the Lithuanian gate (as warnings in
+# legacy content, errors in pipeline articles) unless they appear inside a
+# quotation or code.
+
+terms:
+  - preferred: dirbtinis intelektas (DI)
+    note: First mention in full, then "DI". Keep "AI" in product names and search keywords ("AI video").
+  - preferred: užklausa
+    avoid: [prompt'as]
+    note: '"Promptas" is allowed once, in parentheses, after "užklausa".'
+  - preferred: laisvai samdomas specialistas
+    avoid: [freelanceris, frilanseris, freelancer'is]
+  - preferred: turinys
+    avoid: [kontentas, kontento, kontentą]
+  - preferred: terminas
+    avoid: [deadline'as, dedlainas]
+  - preferred: įdiegti, įgyvendinti
+    avoid: [implementuoti, implementuoja, implementavimas]
+  - preferred: atsiliepimai
+    avoid: [feedback'as, fidbekas]
+  - preferred: taikyti (reklamą)
+    avoid: [targetuoti, targetavimas]
+  - preferred: ES dirbtinio intelekto aktas (DI aktas)
+  - preferred: Bendrasis duomenų apsaugos reglamentas (BDAR)
+
+# Words Hunspell does not know but that are correct here. `stems` accept any
+# inflected form that starts with the stem; `words` must match exactly
+# (case-insensitive).
+spelling:
+  stems:
+    - klip        # klipas, klipo, klipų…
+    - dron        # dronas, dronų…
+    - kroasan
+    - neapibrėžtum
+    - influencer
+    - chatbot
+    - skaitmeniz  # skaitmenizacija…
+    - generatori
+  words:
+    - AI
+    - DI
+    - BDAR
+    - ES
+    - JAV
+    - PVM
+    - NT
+    - SEO
+    - API
+    - CTA
+    - USD
+    - EUR
+    - Instagram
+    - Facebook
+    - TikTok
+    - Reels
+    - YouTube
+    - LinkedIn
+    - Google
+    - Gemini
+    - ChatGPT
+    - OpenAI
+    - Anthropic
+    - Claude
+    - Microsoft
+    - Copilot
+    - Meta
+    - Llama
+    - Mistral
+    - xAI
+    - Grok
+    - Apple
+    - Adobe
+    - Firefly
+    - Canva
+    - HeyGen
+    - Synthesia
+    - Runway
+    - ElevenLabs
+    - Midjourney
+    - Kling
+    - Luma
+    - Higgsfield
+    - Sora
+    - Veo
+    - CapCut
+    - DaVinci
+    - Resolve
+    - Vercel
+    - verslas
+    - Callout

@@ -1,0 +1,42 @@
+# Phrases that fail the Lithuanian gate. Matching is case-insensitive on word
+# boundaries; text inside quotes „…“ and code is ignored.
+#
+# The first group follows VLKK's "Kalbos klaidų sąrašas" (formerly
+# "Didžiųjų kalbos klaidų sąrašas"; the resolution was repealed on
+# 2019-01-31, but VLKK still treats the listed cases as errors). The entries
+# were NOT individually re-checked against vlkk.lt (blocked from the setup
+# environment) — verify via https://www.vlkk.lt/aktualiausios-temos/didziosios-klaidos
+
+phrases:
+  # VLKK Kalbos klaidų sąrašas
+  - { phrase: pilnai, use: visiškai, visai }
+  - { phrase: dėka, use: "dėl, padedant, per" }
+  - { phrase: tame tarpe, use: "iš jų, tarp jų, kartu" }
+  - { phrase: tame skaičiuje, use: "iš jų, tarp jų" }
+  - { phrase: įtakoja, use: "daro įtaką, veikia, lemia" }
+  - { phrase: įtakoti, use: "daryti įtaką, veikti, lemti" }
+  - { phrase: sekantis, use: "kitas, tolesnis" }
+  - { phrase: sekančią, use: "kitą" }
+  - { phrase: kas liečia, use: "dėl, kalbant apie" }
+  - { phrase: nežiūrint į, use: nepaisant }
+  - { phrase: apart, use: "be, išskyrus" }
+  - { phrase: pagal galimybę, use: "jei įmanoma" }
+  - { phrase: pravesti, use: "surengti, organizuoti, vesti" }
+  # Calques / anglicisms
+  - { phrase: adresuoti, use: "spręsti, aptarti" }
+  - { phrase: fokusuotis, use: "sutelkti dėmesį" }
+  - { phrase: fokusuojasi, use: "sutelkia dėmesį" }
+  - { phrase: daryti prasmę, use: "turėti prasmę" }
+  # Hype and filler (AI-writing tells)
+  - { phrase: revoliucija, use: "(konkretus pokytis)" }
+  - { phrase: revoliucinis, use: "(konkretus pokytis)" }
+  - { phrase: žaidimo taisykles keičiantis, use: "(konkretus pokytis)" }
+  - { phrase: game changer, use: "(konkretus pokytis)" }
+  - { phrase: stebuklingas, use: "(konkreti nauda)" }
+  - { phrase: neįtikėtinas, use: "(konkreti nauda)" }
+  - { phrase: ateitis jau čia, use: "(praleisti)" }
+  - { phrase: pasinerkime, use: "(praleisti)" }
+  - { phrase: šiame straipsnyje sužinosite, use: "(pradėk nuo atsakymo)" }
+  - { phrase: nesvarbu, ar esate, use: "(kreipkis į konkretų skaitytoją)" }
+  - { phrase: skaitmeniniame amžiuje, use: "(praleisti)" }
+  - { phrase: sparčiai besikeičiančiame pasaulyje, use: "(praleisti)" }

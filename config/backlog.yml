@@ -1,0 +1,35 @@
+# Topic and keyword ideas, used when news is thin (Phase 3) and for
+# `article --topic`. The entries below were proposed during setup to match the
+# clusters in topics.yml — edit, reorder or delete freely.
+
+items:
+  - topic: AI video reklama smulkiam verslui — nuo ko pradėti
+    type: guide
+    cluster: ai-video-reklama
+    keyword: AI video reklama
+    priority: 1
+  - topic: Kaip iš produkto nuotraukų sukurti reklaminį video su DI
+    type: guide
+    cluster: ai-video-reklama
+    keyword: video iš nuotraukų
+    priority: 1
+  - topic: ES dirbtinio intelekto aktas smulkiam verslui — ką būtina žinoti 2026 m.
+    type: guide
+    cluster: di-reguliavimas
+    keyword: DI aktas verslui
+    priority: 2
+  - topic: DI įrankiai, kurie supranta lietuviškai — kainos ir palyginimas
+    type: comparison
+    cluster: di-irankiai
+    keyword: DI įrankiai lietuvių kalba
+    priority: 2
+  - topic: Kaip rašyti užklausas video generatoriams (Veo, Kling, Runway)
+    type: guide
+    cluster: ai-video-reklama
+    keyword: video generavimas su DI
+    priority: 3
+  - topic: Finansavimas skaitmenizacijai ir DI diegimui Lietuvoje
+    type: guide
+    cluster: finansavimas
+    keyword: finansavimas DI diegimui
+    priority: 3

@@ -1,0 +1,224 @@
+name: Article (shadow)
+
+# Phase 2: one article on demand → shadow PR in the site repo (never merged).
+# Jobs are split so secrets never meet untrusted content:
+#   generate — ANTHROPIC_API_KEY only; model output is data, written to files
+#   verify   — no secrets; the site's strict content check + full build
+#   publish  — SITE_REPO_TOKEN only; opens the draft PR
+#
+# Secrets:   ANTHROPIC_API_KEY, SITE_REPO_TOKEN (fine-grained PAT on the site
+#            repo: Contents RW, Pull requests RW, Issues RW for labels)
+# Variables: PIPELINE_PAUSED=true stops everything (kill switch)
+
+on:
+  workflow_dispatch:
+    inputs:
+      topic:
+        description: Tema (arba palik tuščią ir nurodyk backlog numerį)
+        required: false
+      backlog:
+        description: Backlog numeris (config/backlog.yml, nuo 1)
+        required: false
+      type:
+        type: choice
+        options: [guide, news, comparison]
+        default: guide
+      cluster:
+        description: Temų grupė (config/topics.yml key)
+        required: false
+      keyword:
+        description: Pagrindinis raktažodis (lietuviškai)
+        required: false
+      dry_run:
+        description: Nieko neišsaugoti ir neatidaryti PR
+        type: boolean
+        default: false
+
+concurrency:
+  group: pipeline
+  cancel-in-progress: false
+
+env:
+  SITE_REPO: mykolas268-jpg/verslas
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    permissions:
+      contents: write # state branch
+    outputs:
+      status: ${{ steps.article.outputs.status }}
+      slug: ${{ steps.article.outputs.slug }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Install Hunspell (lt_LT)
+        run: sudo apt-get update -q && sudo apt-get install -y -q hunspell hunspell-lt
+
+      - name: Check out the site (read-only)
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ env.SITE_REPO }}
+          path: site
+          token: ${{ secrets.SITE_REPO_TOKEN || github.token }}
+          persist-credentials: false
+
+      - name: Check out state branch
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          remote="https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
+          if git ls-remote --exit-code --heads "$remote" state >/dev/null 2>&1; then
+            git clone --quiet --depth 1 --branch state "$remote" state
+          else
+            mkdir state && git -C state init -q -b state && git -C state remote add origin "$remote"
+          fi
+
+      - name: Generate article
+        id: article
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          PIPELINE_PAUSED: ${{ vars.PIPELINE_PAUSED }}
+          TOPIC: ${{ inputs.topic }}
+          BACKLOG: ${{ inputs.backlog }}
+          TYPE: ${{ inputs.type }}
+          CLUSTER: ${{ inputs.cluster }}
+          KEYWORD: ${{ inputs.keyword }}
+          DRY_RUN: ${{ inputs.dry_run }}
+        run: |
+          args=(article --type "$TYPE" --site site --state state --out "out/run")
+          [ -n "$TOPIC" ] && args+=(--topic "$TOPIC")
+          [ -n "$BACKLOG" ] && args+=(--backlog "$BACKLOG")
+          [ -n "$CLUSTER" ] && args+=(--cluster "$CLUSTER")
+          [ -n "$KEYWORD" ] && args+=(--keyword "$KEYWORD")
+          [ "$DRY_RUN" = "true" ] && args+=(--dry-run)
+          set +e
+          npm run -s pipeline -- "${args[@]}"
+          code=$?
+          set -e
+          echo "exit_code=$code" >> "$GITHUB_OUTPUT"
+          echo "Pipeline exit code: $code (0 ready, 3 gates failed, 4 aborted, 1 error)"
+
+      - name: Upload artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: article-run
+          path: out/run
+          if-no-files-found: ignore
+
+      - name: Save state
+        if: always() && inputs.dry_run != true
+        run: |
+          cd state
+          git add -A
+          if git diff --cached --quiet; then echo "No state changes"; exit 0; fi
+          git -c user.name="verslas-pipeline" -c user.email="actions@users.noreply.github.com" \
+            commit -q -m "state: article run ${GITHUB_RUN_ID}"
+          git push -q origin state
+
+      - name: Fail on pipeline error
+        if: steps.article.outputs.exit_code == '1'
+        run: exit 1
+
+  verify:
+    needs: generate
+    if: needs.generate.outputs.status == 'ready'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    env:
+      SLUG: ${{ needs.generate.outputs.slug }}
+      NEXT_PUBLIC_SITE_URL: https://www.verslas.ai
+      NEXT_TELEMETRY_DISABLED: '1'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          repository: ${{ env.SITE_REPO }}
+          path: site
+          persist-credentials: false
+      - uses: actions/download-artifact@v4
+        with:
+          name: article-run
+          path: out
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Add the article to the site
+        run: cp "out/${SLUG}.mdx" "site/content/straipsniai/${SLUG}.mdx"
+      - name: Strict content check
+        working-directory: site
+        run: |
+          npm ci
+          if [ -f scripts/check-content.mjs ]; then
+            node scripts/check-content.mjs --strict "content/straipsniai/${SLUG}.mdx"
+            node scripts/check-content.mjs
+          else
+            echo "::warning::scripts/check-content.mjs not on the site's main yet (verslas#2 not merged)"
+          fi
+      - name: Build the site
+        working-directory: site
+        run: npm run build
+
+  publish:
+    needs: [generate, verify]
+    if: needs.generate.outputs.status == 'ready' && inputs.dry_run != true
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    env:
+      SLUG: ${{ needs.generate.outputs.slug }}
+      GH_TOKEN: ${{ secrets.SITE_REPO_TOKEN }}
+    steps:
+      - name: Require the site token
+        run: |
+          if [ -z "$GH_TOKEN" ]; then
+            echo "::error::SITE_REPO_TOKEN secret is not set; cannot open the PR (the article is in the run artifacts)."
+            exit 1
+          fi
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci --omit=dev
+      - uses: actions/download-artifact@v4
+        with:
+          name: article-run
+          path: out
+      - name: Backpressure (open pipeline PRs)
+        id: backpressure
+        run: |
+          max=$(node --input-type=module -e "import {load} from 'js-yaml'; import fs from 'node:fs'; console.log(load(fs.readFileSync('config/config.yml','utf8')).cadence.maxOpenPrs)")
+          open=$(gh pr list --repo "$SITE_REPO" --label pipeline --state open --json number --jq length)
+          echo "open=$open max=$max"
+          if [ "$open" -ge "$max" ]; then
+            echo "::warning::$open pipeline PRs are waiting for review (max $max). Not opening another."
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+          fi
+      - name: Open draft shadow PR
+        if: steps.backpressure.outputs.skip != 'true'
+        run: |
+          set -euo pipefail
+          title=$(jq -r .title out/summary.json)
+          branch="pipeline/shadow/$(date -u +%Y%m%d)-${SLUG}"
+          git clone --quiet --depth 1 "https://x-access-token:${GH_TOKEN}@github.com/${SITE_REPO}.git" site
+          cd site
+          git checkout -q -b "$branch"
+          cp "../out/${SLUG}.mdx" "content/straipsniai/${SLUG}.mdx"
+          git add "content/straipsniai/${SLUG}.mdx"
+          git -c user.name="verslas-pipeline" -c user.email="actions@users.noreply.github.com" \
+            commit -q -m "content(shadow): ${title}"
+          git push -q origin "$branch"
+          gh label create shadow --repo "$SITE_REPO" --color BFD4F2 --description "Pipeline shadow draft — never merge" --force >/dev/null || true
+          gh label create pipeline --repo "$SITE_REPO" --color 0E8A16 --description "Opened by the content pipeline" --force >/dev/null || true
+          gh pr create --repo "$SITE_REPO" --base main --head "$branch" --draft \
+            --title "[shadow] ${title}" --body-file ../out/pr-body.md \
+            --label shadow --label pipeline

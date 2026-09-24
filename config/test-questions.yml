@@ -1,0 +1,24 @@
+# Monthly manual GEO check: ask each question in ChatGPT, Perplexity, Gemini,
+# Copilot and Claude (web search on) and record whether verslas.ai is cited.
+# Record results in reports/geo-YYYY-MM.md.
+questions:
+  - Kiek kainuoja reklaminis video mažam verslui Lietuvoje?
+  - Kaip sukurti reklaminį video su dirbtiniu intelektu?
+  - Kaip iš nuotraukų padaryti video skelbimui?
+  - Ar AI sukurtą video galima naudoti „Facebook“ reklamai?
+  - Koks DI įrankis geriausiai rašo lietuviškai?
+  - Kiek kainuoja ChatGPT verslui ir ar verta mokėti?
+  - Ką ES dirbtinio intelekto aktas reiškia smulkiam verslui?
+  - Ar reikia žymėti DI sukurtą turinį?
+  - Kaip naudoti DI klientų aptarnavimui nepažeidžiant BDAR?
+  - Kaip su DI parašyti produktų aprašymus e. parduotuvei?
+  - Kokie yra geriausi AI video generatoriai 2026 m.?
+  - Kaip nekilnojamojo turto brokeriui sukurti video turą be operatoriaus?
+  - Ar galima gauti finansavimą DI diegimui Lietuvoje?
+  - Kaip rašyti užklausas (promptus) video generatoriui?
+  - Kiek laiko užtrunka sukurti reklaminį video?
+  - Ar DI gali pakeisti rinkodaros agentūrą mažam verslui?
+  - Kaip DI padeda smulkiam verslui socialiniuose tinkluose?
+  - Kokios rizikos naudojant DI sukurtus vaizdus reklamoje?
+  - Kaip patikrinti, ar DI įrankis veikia Lietuvoje?
+  - Kokius DI įrankius naudoti kavinei ar restoranui?

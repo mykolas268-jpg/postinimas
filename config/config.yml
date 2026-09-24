@@ -1,0 +1,92 @@
+# Pipeline configuration. Validated by src/config.ts at startup; a bad value
+# stops the run before anything is spent.
+
+mode: shadow # shadow | approval | auto (see docs/PLAN.md § 0 and § 12 of the spec)
+timezone: Europe/Vilnius
+
+site:
+  repo: mykolas268-jpg/verslas
+  baseBranch: main
+  url: https://www.verslas.ai
+  contentDir: content/straipsniai
+  defaultAuthor: mykolas-gustas
+  titleSuffix: " · verslas.ai"
+
+# Model IDs. Verify against https://platform.claude.com/docs/en/about-claude/models/overview
+models:
+  triage: claude-haiku-4-5
+  research: claude-sonnet-5
+  factsheet: claude-sonnet-5
+  factcheck: claude-sonnet-5
+  writer: claude-opus-5-5
+  editor: claude-opus-5-5
+
+effort:
+  research: high
+  factsheet: medium
+  factcheck: high
+  writer: high
+  editor: high
+
+# USD per million tokens, from https://platform.claude.com/docs/en/about-claude/pricing
+pricing:
+  effectiveDate: "2026-09-24"
+  webSearchPer1000: 10
+  models:
+    claude-haiku-4-5: { input: 1, output: 5, cacheWrite: 1.25, cacheRead: 0.1 }
+    claude-sonnet-5: { input: 2, output: 10, cacheWrite: 2.5, cacheRead: 0.2 }
+    claude-opus-5-5: { input: 4, output: 20, cacheWrite: 5, cacheRead: 0.2 }
+
+# Hard caps. The run stops (fail closed) before a call that could exceed one.
+caps:
+  perRunUsd: 12
+  perArticleUsd: 8
+  monthlyUsd: 150
+  alertAtFractions: [0.5, 0.8]
+
+cadence:
+  maxArticlesPerDay: 1
+  targetPerWeek: 4
+  mix: { guides: 0.75, news: 0.25 }
+  maxOpenPrs: 5
+  prAutoCloseDays: { news: 3, other: 14 }
+
+research:
+  maxSearches: 12
+  maxFetches: 15
+  fetchMaxContentTokens: 20000
+  # Upper bound used by the budget guard for one research call (tokens are
+  # not known in advance because fetched pages are added server-side).
+  worstCaseUsd: 3
+  blockedDomains:
+    - x.com
+    - twitter.com
+    - youtube.com
+    - facebook.com
+    - instagram.com
+    - tiktok.com
+    - linkedin.com
+
+writing:
+  revisionLoops: 2
+  # Words in the body (FAQ and sources are rendered from frontmatter).
+  lengthWords:
+    news: [500, 900]
+    guide: [1000, 1800]
+    comparison: [1000, 1800]
+    roundup: [400, 1200]
+  # Spec asks 2–5; the minimum is 1 while the site has only two articles.
+  internalLinks: { min: 1, max: 5 }
+  faq: { min: 3, max: 5 }
+  titleMax: 60
+  excerptLength: [140, 160]
+
+language:
+  # Dash used between clauses; the existing articles use the em dash.
+  dash: "—"
+
+# Facts about verslas.ai itself (from lib/offer.ts in the site repo). The
+# writer may state them without an external source; the fact-check accepts
+# them. Keep in sync with the site.
+houseFacts:
+  - "verslas.ai kuria reklaminius video verslui: 20–30 sek. klipas už 99 €, paruošiamas per 4 darbo dienas, įskaičiuotas vienas taisymų ratas, subtitrai lietuviškai."

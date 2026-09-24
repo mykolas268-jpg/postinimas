@@ -1,0 +1,30 @@
+{
+  "title": "AI video įrankis ExampleVideo 2.0: kaina ir ar veikia Lietuvoje",
+  "seoTitle": "ExampleVideo 2.0: AI video įrankis, kaina ir galimybės",
+  "excerpt": "ExampleVideo 2.0 iš nuotraukų sukuria iki 60 sekundžių klipą. Kiek kainuoja, ar veikia Lietuvoje ir ką verta žinoti apie tavo įkeliamų duomenų naudojimą?",
+  "bodyMdx": "ExampleVideo 2.0 leidžia iš kelių nuotraukų sukurti iki 60 sekundžių reklaminį klipą, o „Pro“ planas kainuoja 20 USD per mėnesį. Įrankis veikia ir Lietuvoje, tačiau jo sąsaja lietuviškai neišversta — lietuviškai galima sugeneruoti tik subtitrus.\n\n<Callout type=\"info\" title=\"Trumpai\">\n\n- ExampleVideo 2.0 pristatytas 2026 m. rugsėjo 1 d.\n- „Pro“ planas kainuoja 20 USD per mėnesį, o nemokamas planas prie klipų prideda vandens ženklą.\n- Įrankis prieinamas ES ir Lietuvoje, subtitrus galima kurti 30 kalbų, tarp jų ir lietuvių.\n\n</Callout>\n\n## Ką naujo siūlo AI video įrankis ExampleVideo 2.0?\n\nNaujoji versija iš nuotraukų sukuria iki 60 sekundžių trukmės klipą su judesiu, tekstu ir subtitrais. Tai aktualu verslams, kurie turi gerų produkto nuotraukų, bet neturi laiko ar biudžeto filmavimui.\n\nSvarbiausia, kad nereikia jokios filmavimo įrangos. Įkeli nuotraukas, parašai trumpą žinutę ir pasirenki formatą. Įrankis pats sudėlioja kadrus, prideda judesį ir sugeneruoja subtitrus. Rezultatą gali peržiūrėti ir pakoreguoti prieš atsisiųsdamas.\n\nPavyzdžiui, įsivaizduokime e. parduotuvę, kuri parduoda rankų darbo keramiką. Ji galėtų iš penkių produkto nuotraukų sukurti trumpą klipą socialiniams tinklams ir kiekvieną savaitę keisti tik tekstą.\n\n## Kiek kainuoja ir ar veikia Lietuvoje?\n\nExampleVideo prieinamas visoje ES, taip pat ir Lietuvoje. Kainos nurodytos JAV doleriais, todėl galutinė suma eurais priklauso nuo banko kurso.\n\n| Planas | Kaina | Pastabos |\n|---|---|---|\n| Nemokamas | Nemokamai | Klipai su vandens ženklu |\n| „Pro“ | 20 USD per mėnesį | Be vandens ženklo |\n\nAr į „Pro“ kainą ES klientams įskaičiuotas PVM, gamintojas aiškiai nenurodo, todėl prieš mokėdamas pasitikrink sąskaitos informaciją [kainų puslapyje](https://example.com/pricing).\n\nSąsaja veikia tik angliškai. Lietuviškai galima sugeneruoti subtitrus: palaikomos 30 kalbų, tarp jų ir lietuvių. Vis dėlto automatiškai sukurtus subtitrus visada verta perskaityti, nes juose gali pasitaikyti linksnių ar kablelių klaidų.\n\n## Kam tai aktualu, o kam ne\n\nĮrankis labiausiai pravers smulkiam verslui, kuriam reikia dažnai ir nebrangiai kurti trumpus klipus: e. parduotuvėms, kavinėms, paslaugų verslams. Jei jau turi kokybiškų nuotraukų, pradėti galima tą pačią dieną.\n\nMažiau naudos gausi, jei reikia gyvo filmavimo su žmonėmis, sudėtingo scenarijaus ar televizijos kokybės vaizdo. Tokiu atveju įrankis nepakeis operatoriaus ir montuotojo.\n\n## Ką daryti dabar\n\n- **Daryti dabar:** išbandyk nemokamą planą su dviem ar trimis savo nuotraukomis ir įvertink, ar rezultatas tinka tavo prekės ženklui.\n- **Palaukti:** jei tau būtina lietuviška sąsaja, jos kol kas nėra, ir gamintojas nenurodo, kada ji atsiras.\n- **Ignoruoti:** reklaminius pažadus apie „profesionalų filmavimą be operatoriaus“ — vertink tik tai, ką matai savo bandomuose klipuose.\n\nJei svarstai, ar verta klipą kurti pačiam, ar užsakyti, palygink variantus [reklaminio video kainų gide](/straipsniai/reklaminis-video-kaina).\n\n## Kokie ribojimai ir rizikos?\n\nPagal privatumo taisykles įkelta medžiaga gali būti naudojama modeliams mokyti, nebent nustatymuose to atsisakai. Jei kelsi klientų nuotraukas ar kitą jautrią medžiagą, šį nustatymą išjunk iš karto.\n\nNemokamo plano klipai turi vandens ženklą, todėl reklamai jie netinka. Be to, sugeneruotas judesys ne visada atrodo natūraliai, ypač kai nuotraukoje daug smulkių detalių.\n\nRekomenduojame kiekvieną klipą peržiūrėti prieš paskelbiant: patikrink tekstą, subtitrus ir tai, ar vaizdas atitinka tikrą produktą.",
+  "faq": [
+    {
+      "q": "Kiek kainuoja ExampleVideo?",
+      "a": "„Pro“ planas kainuoja 20 USD per mėnesį. Nemokamas planas prideda vandens ženklą."
+    },
+    {
+      "q": "Ar ExampleVideo veikia Lietuvoje?",
+      "a": "Taip, įrankis prieinamas ES, taip pat ir Lietuvoje."
+    },
+    {
+      "q": "Ar ExampleVideo moka lietuviškai?",
+      "a": "Sąsaja veikia tik angliškai, bet subtitrus galima sugeneruoti lietuviškai."
+    }
+  ],
+  "changes": [
+    {
+      "before": "iš penkių produktų nuotraukų",
+      "after": "iš penkių produkto nuotraukų",
+      "reason": "Vienaskaita: kalbama apie vieną produktą."
+    }
+  ],
+  "uncertainties": [
+    "Ar „vandens ženklas“ čia geriausias terminas (galima „vandenženklis“)?"
+  ]
+}

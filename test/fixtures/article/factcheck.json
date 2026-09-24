@@ -1,0 +1,81 @@
+{
+  "claims": [
+    {
+      "text": "ExampleVideo 2.0 pristatytas 2026 m. rugsėjo 1 d.",
+      "kind": "date",
+      "claimIds": [
+        "C1"
+      ],
+      "status": "supported",
+      "note": "Matches C1."
+    },
+    {
+      "text": "„Pro“ planas kainuoja 20 USD per mėnesį",
+      "kind": "price",
+      "claimIds": [
+        "C2"
+      ],
+      "status": "supported",
+      "note": "Matches C2."
+    },
+    {
+      "text": "nemokamas planas prie klipų prideda vandens ženklą",
+      "kind": "feature",
+      "claimIds": [
+        "C3"
+      ],
+      "status": "supported",
+      "note": ""
+    },
+    {
+      "text": "Įrankis prieinamas ES ir Lietuvoje",
+      "kind": "availability",
+      "claimIds": [
+        "C4"
+      ],
+      "status": "supported",
+      "note": ""
+    },
+    {
+      "text": "subtitrus galima kurti 30 kalbų, tarp jų ir lietuvių",
+      "kind": "feature",
+      "claimIds": [
+        "C5"
+      ],
+      "status": "supported",
+      "note": ""
+    },
+    {
+      "text": "iki 60 sekundžių trukmės klipą",
+      "kind": "number",
+      "claimIds": [
+        "C6"
+      ],
+      "status": "supported",
+      "note": ""
+    },
+    {
+      "text": "įkelta medžiaga gali būti naudojama modeliams mokyti, nebent nustatymuose to atsisakai",
+      "kind": "other",
+      "claimIds": [
+        "C7"
+      ],
+      "status": "supported",
+      "note": ""
+    },
+    {
+      "text": "Pavyzdžiui, įsivaizduokime e. parduotuvę, kuri parduoda rankų darbo keramiką.",
+      "kind": "other",
+      "claimIds": [],
+      "status": "example",
+      "note": "Marked as example."
+    },
+    {
+      "text": "Rekomenduojame kiekvieną klipą peržiūrėti prieš paskelbiant",
+      "kind": "other",
+      "claimIds": [],
+      "status": "opinion",
+      "note": ""
+    }
+  ]
+}

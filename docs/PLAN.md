@@ -24,6 +24,13 @@ Date: 2026-09-24.
 | Form | Inquiry delivery | Server delivery via Telegram, env-gated, activated in the Vercel phase. **GDPR caveat:** Telegram is outside the EU, so the privacy policy must name it, and an EU-based email provider is the cleaner alternative. Decide at activation. | 2026-09-24 |
 | Open | B4 (bio, photo, links, company code and address), B5 (clusters/CTAs), B8 (GSC/Bing access), B9 (book as voice reference; book title and timing for its waitlist), B10 (topics to never cover), price-range provenance | Needed from the owner | open |
 
+### Phase status (2026-09-24)
+
+| Phase | Status |
+| --- | --- |
+| 1 | Code done in verslas#2 (CI, SEO, canonical www fix, content cleanup, policies, inquiry API). Waiting for merge; Vercel items deferred. |
+| 2 | Vertical slice built: `article` CLI, research → fact sheet (provenance-checked) → writer → Lithuanian editor → gates (Lithuanian/Hunspell, SEO, structure/MDX, link allowlist, fact-check + number check, links resolve) → up to 2 revisions → shadow draft PR workflow. 51 unit/e2e tests, offline fixture run, and the generated MDX passes the site's strict check and build. **Not yet run against the real API** (needs `ANTHROPIC_API_KEY` and `SITE_REPO_TOKEN`). |
+
 ### Vercel phase checklist (last phase, owner actions)
 1. Check the plan and the firewall (the "AI Bots" managed ruleset set to Off or Log; Attack Challenge Mode off).
 2. Fix or delete `NEXT_PUBLIC_SITE_URL`. It currently has a leading tab and the apex host; the code already neutralises both.

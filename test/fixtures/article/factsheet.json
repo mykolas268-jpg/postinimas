@@ -1,0 +1,24 @@
+{
+  "topic": "ExampleVideo 2.0 (test fixture)",
+  "articleType": "news",
+  "summary": "Test fixture about a fictional product.",
+  "primaryKeyword": "AI video įrankis",
+  "secondaryKeywords": ["video iš nuotraukų"],
+  "questions": ["Kiek kainuoja ExampleVideo?", "Ar ExampleVideo veikia Lietuvoje?", "Ar ExampleVideo moka lietuviškai?"],
+  "claims": [
+    { "id": "C1", "claim": "ExampleVideo 2.0 was released on 2026-09-01", "kind": "version", "value": "2.0, 2026-09-01", "sources": [{ "url": "https://example.com/blog/examplevideo-2", "publisher": "ExampleVideo", "title": "ExampleVideo 2.0", "date": "2026-09-01", "tier": "primary" }], "verifiedByPrimary": true, "confidence": "high" },
+    { "id": "C2", "claim": "The Pro plan costs 20 USD per month", "kind": "price", "value": "20 USD/month", "sources": [{ "url": "https://example.com/pricing", "publisher": "ExampleVideo", "title": "Pricing", "date": null, "tier": "primary" }], "verifiedByPrimary": true, "confidence": "high" },
+    { "id": "C3", "claim": "The free plan adds a watermark to clips", "kind": "feature", "value": null, "sources": [{ "url": "https://example.com/pricing", "publisher": "ExampleVideo", "title": "Pricing", "date": null, "tier": "primary" }], "verifiedByPrimary": true, "confidence": "high" },
+    { "id": "C4", "claim": "ExampleVideo is available in the EU, including Lithuania", "kind": "availability", "value": null, "sources": [{ "url": "https://example.com/help/availability", "publisher": "ExampleVideo", "title": "Availability", "date": null, "tier": "primary" }], "verifiedByPrimary": true, "confidence": "high" },
+    { "id": "C5", "claim": "The interface is English-only; subtitles can be generated in 30 languages including Lithuanian", "kind": "feature", "value": "30 languages", "sources": [{ "url": "https://example.com/help/subtitles", "publisher": "ExampleVideo", "title": "Subtitles", "date": null, "tier": "primary" }], "verifiedByPrimary": true, "confidence": "high" },
+    { "id": "C6", "claim": "Clips generated from photos can be up to 60 seconds long", "kind": "number", "value": "60 seconds", "sources": [{ "url": "https://example.com/blog/examplevideo-2", "publisher": "ExampleVideo", "title": "ExampleVideo 2.0", "date": "2026-09-01", "tier": "primary" }], "verifiedByPrimary": true, "confidence": "high" },
+    { "id": "C7", "claim": "Uploaded media may be used to train models unless the user opts out in settings", "kind": "other", "value": null, "sources": [{ "url": "https://example.com/privacy", "publisher": "ExampleVideo", "title": "Privacy", "date": null, "tier": "primary" }, { "url": "https://news.example.org/examplevideo-review", "publisher": "Example News", "title": "Review", "date": "2026-09-10", "tier": "secondary" }], "verifiedByPrimary": true, "confidence": "high" },
+    { "id": "C8", "claim": "ExampleVideo will add a Lithuanian interface next year", "kind": "feature", "value": null, "sources": [{ "url": "https://invented.example.net/rumour", "publisher": "Blog", "title": "Rumour", "date": null, "tier": "secondary" }], "verifiedByPrimary": false, "confidence": "low" }
+  ],
+  "unknowns": ["Whether the Pro price includes VAT for EU customers"],
+  "conflicts": [],
+  "ltEuContext": { "euAvailability": "Available (C4)", "ltAvailability": "Available (C4)", "lithuanianLanguageSupport": "Subtitles only (C5)", "pricing": "20 USD/month (C2)", "gdprNotes": "Training opt-out (C7)", "aiActNotes": "unknown", "alternatives": [] },
+  "useCases": ["Product clips for an e-shop", "Short clips for a café's social media"],
+  "risks": ["Uploads used for training by default (C7)"],
+  "isLegalTopic": false
+}

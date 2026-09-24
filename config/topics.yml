@@ -1,0 +1,44 @@
+# Topic clusters. `cta` is the one contextual call to action the writer may
+# add inside the article body (the site also renders its standard video CTA
+# box at the end of every article). Keep CTAs useful, not salesy.
+#
+# The book is still being written (owner, 2026-09-24): no book CTA until it
+# has a page with a working waitlist.
+
+clusters:
+  - key: ai-video-reklama
+    name: DI video ir reklama
+    description: AI video reklamų kūrimas, video generavimo įrankiai, kainos, naudojimas socialiniuose tinkluose ir NT, e. prekyboje.
+    weight: 1.0
+    cta:
+      href: /reklaminis-video
+      hint: Jei skaitytojas nori paruošto klipo, o ne daryti pats — paminėk reklaminio video paslaugą (99 €, 4 darbo dienos).
+
+  - key: di-rinkodara
+    name: DI rinkodara smulkiam verslui
+    description: DI turinio kūrimui, socialiniams tinklams, reklamai, klientų aptarnavimui; praktiniai scenarijai Lietuvos smulkiam verslui.
+    weight: 0.9
+    cta:
+      href: /reklaminis-video
+      hint: Kai tema susijusi su vizualiu turiniu ar reklama — paminėk reklaminio video paslaugą.
+
+  - key: di-irankiai
+    name: DI įrankiai verslui
+    description: Įrankių pokyčiai, kainos, prieinamumas ES ir Lietuvoje, lietuvių kalbos palaikymas, palyginimai.
+    weight: 0.8
+    cta:
+      href: /reklaminis-video
+      hint: CTA tik jei natūraliai tinka (video, reklama); kitaip — jokio CTA teksto.
+
+  - key: di-reguliavimas
+    name: DI reguliavimas ir duomenys
+    description: ES DI aktas, BDAR, autorių teisės, DI turinio žymėjimas — kas aktualu smulkiam verslui.
+    weight: 0.7
+    legal: true
+    cta: null
+
+  - key: finansavimas
+    name: Finansavimas skaitmenizacijai ir DI
+    description: Lietuvos ir ES finansavimo priemonės (pvz., Inovacijų agentūra) skaitmenizacijai ir DI diegimui.
+    weight: 0.6
+    cta: null

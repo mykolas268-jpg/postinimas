@@ -1,0 +1,11 @@
+{
+  "notes": "TEST FIXTURE. ExampleVideo 2.0 announced 2026-09-01 (https://example.com/blog/examplevideo-2). Pro plan 20 USD/month; free plan adds watermark (https://example.com/pricing). Available in the EU incl. Lithuania (https://example.com/help/availability). UI in English only; subtitles in 30 languages incl. Lithuanian (https://example.com/help/subtitles). Clips up to 60 seconds (https://example.com/blog/examplevideo-2). Uploads may be used for training unless opted out (https://example.com/privacy; https://news.example.org/examplevideo-review).",
+  "seen": [
+    { "url": "https://example.com/blog/examplevideo-2", "title": "ExampleVideo 2.0", "via": "fetch", "retrievedAt": "2026-09-24T06:00:00Z" },
+    { "url": "https://example.com/pricing", "title": "Pricing", "via": "fetch", "retrievedAt": "2026-09-24T06:00:00Z" },
+    { "url": "https://example.com/help/availability", "title": "Availability", "via": "fetch", "retrievedAt": "2026-09-24T06:00:00Z" },
+    { "url": "https://example.com/help/subtitles", "title": "Subtitles", "via": "fetch", "retrievedAt": "2026-09-24T06:00:00Z" },
+    { "url": "https://example.com/privacy", "title": "Privacy", "via": "fetch", "retrievedAt": "2026-09-24T06:00:00Z" },
+    { "url": "https://news.example.org/examplevideo-review", "title": "Review", "via": "search", "retrievedAt": null }
+  ]
+}

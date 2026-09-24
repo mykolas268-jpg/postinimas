@@ -1,0 +1,3 @@
+# Topics the pipeline must never write about (owner's list, question B10).
+# Each entry is matched case-insensitively against the topic and fact sheet.
+topics: []
