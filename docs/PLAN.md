@@ -117,6 +117,15 @@ fails CI.
    2.5 chars/token (Lithuanian JSON), not 3. Deliberately unchanged until the
    first real round shows the numbers: effort levels and server-side refusal
    fallbacks.
+5. **Workflows and site.** Hourly scheduled eval checks no longer share the
+   `pipeline` concurrency group (a queued no-op check cancelled pending
+   article runs); a scheduled round starts only when no other pipeline run is
+   active, and `article.yml` refuses to start during one. `verify` gets the
+   site source as an artifact, so it needs no token once the site repo is
+   private. All state pushes go through `scripts/push-state.sh` (union merge
+   for `*.jsonl`, retried). actionlint and shellcheck clean. Site: the
+   inquiry rate limiter no longer grows without bound, has a global cap per
+   instance, and a rate-limited visitor gets the email fallback.
 
 Not changed on purpose: the H1 keyword check still requires the keyword's
 own words ("žymėti" does not count for "žymėjimas"). That is an SEO rule,
