@@ -69,7 +69,7 @@ export function formatNotification(event: NotifyEvent): string {
         if (event.verify && event.verify !== 'success') {
           lines.push(`Straipsnis ${name} paruoštas, bet svetainės patikra nepavyko — PR neatidarytas.`);
         } else if (event.prUrl) {
-          lines.push(`Naujas bandomasis straipsnis ${name}.`, `PR: ${event.prUrl}`, 'Įvertink jį PR komentaru /ivertinimas 1–5 ir pastabomis.');
+          lines.push(`Naujas bandomasis straipsnis ${name}.`, `PR: ${event.prUrl}`, 'Įvertink jį PR komentaru /ivertinimas 1–5 ir pastabomis; faktų klaidas pažymėk /klaida.');
         } else if (event.noPrReason === 'backpressure') {
           lines.push(`Straipsnis ${name} paruoštas, bet PR neatidarytas: laukia per daug neperžiūrėtų PR.`);
         } else if (event.noPrReason === 'dry-run') {

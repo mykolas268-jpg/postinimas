@@ -68,7 +68,7 @@ export function buildPrBody(input: ReportInput): string {
 
   if (input.mode === 'shadow') {
     out.push(
-      '> **Shadow režimas.** Šio PR nesujunk. Tai bandomasis straipsnis: įvertink jį komentaru `/ivertinimas <1–5> <pastabos>`. Pagal įvertinimus derinami promptai ir svoriai.',
+      '> **Shadow režimas.** Šio PR nesujunk. Tai bandomasis straipsnis: įvertink jį komentaru `/ivertinimas <1–5> <pastabos>`, o kiekvieną faktų klaidą pažymėk atskira eilute `/klaida <kas neteisinga>`. Pagal įvertinimus derinami promptai ir svoriai.',
       '',
     );
   }

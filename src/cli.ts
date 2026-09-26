@@ -11,6 +11,7 @@ import type { LlmClient } from './llm/client.js';
 import { FixtureLlmClient } from './llm/fixture.js';
 import { log, setRunId } from './log.js';
 import { formatNotification, sendTelegram, type CostAlert, type NotifyEvent } from './notify.js';
+import { checkpoint, collectRatings, renderRatings, type PipelinePr } from './ratings.js';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
@@ -26,6 +27,7 @@ Commands
                  --cluster <key>      topic cluster from config/topics.yml
                  --keyword "…"        primary Lithuanian keyword
   eval-report  Aggregate an eval round: --in <dir> --round <id> [--state <dir>]
+  ratings      Owner ratings of shadow PRs: --prs <gh pr list JSON> --owner <login> [--state <dir>]
   notify       Owner notification (Telegram if TELEGRAM_BOT_TOKEN/CHAT_ID are set):
                  --kind article --dir <out> [--pr-url U] [--verify <result>] [--no-pr dry-run|backpressure|publish-failed]
                  --kind eval --summary <summary.json> [--report-url U] [--state <dir>]
@@ -303,6 +305,53 @@ async function commandNotify(args: Args): Promise<number> {
   return 0;
 }
 
+/**
+ * Collects the owner's /ivertinimas and /klaida comments from pipeline PRs
+ * (the JSON of `gh pr list --json number,title,url,state,comments`) into
+ * state/ratings.json + ratings.md, and tells the owner once when the Phase 2
+ * checkpoint is reached.
+ */
+async function commandRatings(args: Args): Promise<number> {
+  const prsFile = flag(args, 'prs');
+  const owner = flag(args, 'owner');
+  if (!prsFile || !owner) throw new Error('ratings: --prs <file> and --owner <login> are required');
+  const raw = JSON.parse(fs.readFileSync(path.resolve(prsFile), 'utf8')) as {
+    number: number; title: string; url: string; state: string;
+    comments?: { author?: { login?: string } | string; body?: string; createdAt?: string }[];
+  }[];
+  const prs: PipelinePr[] = raw.map((pr) => ({
+    number: pr.number,
+    title: pr.title,
+    url: pr.url,
+    state: pr.state,
+    comments: (pr.comments ?? []).map((comment) => ({
+      author: typeof comment.author === 'string' ? comment.author : (comment.author?.login ?? ''),
+      body: comment.body ?? '',
+      createdAt: comment.createdAt ?? '',
+    })),
+  }));
+  const ratings = collectRatings(prs, owner);
+  const status = checkpoint(ratings);
+  const report = renderRatings(ratings, status);
+  process.stdout.write(`${report}\n`);
+
+  const stateArg = flag(args, 'state');
+  if (stateArg) {
+    const stateDir = path.resolve(stateArg);
+    const file = path.join(stateDir, 'ratings.json');
+    const before = readJsonFile<{ checkpoint?: { reached?: boolean } }>(file);
+    fs.mkdirSync(stateDir, { recursive: true });
+    fs.writeFileSync(file, `${JSON.stringify({ checkpoint: status, ratings }, null, 2)}\n`);
+    fs.writeFileSync(path.join(stateDir, 'ratings.md'), `${report}\n`);
+    if (status.reached && !before?.checkpoint?.reached) {
+      const text = `2 etapo tikslas pasiektas: ${status.good} bandomieji straipsniai įvertinti ≥ 4/5 ir be faktų klaidų. Galima aptarti perėjimą prie 3 etapo.`;
+      const result = await sendTelegram(text, { token: process.env.TELEGRAM_BOT_TOKEN, chatId: process.env.TELEGRAM_CHAT_ID });
+      process.stdout.write(`${text}\n(Telegram: ${result})\n`);
+    }
+  }
+  return 0;
+}
+
 async function main(): Promise<number> {
   const args = parseArgs(process.argv.slice(2));
   if (process.env.PIPELINE_PAUSED === 'true') {
@@ -319,6 +368,8 @@ async function main(): Promise<number> {
       return commandBudgetCheck(args);
     case 'notify':
       return commandNotify(args);
+    case 'ratings':
+      return commandRatings(args);
     case 'audit-site': {
       const base = flag(args, 'url') ?? 'https://verslas.ai';
       return spawnSync('bash', [path.join(ROOT, 'docs', 'live-site-check.sh'), base], { stdio: 'inherit' }).status ?? 1;

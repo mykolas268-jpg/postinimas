@@ -1,0 +1,80 @@
+name: Shadow ratings
+
+# Collects the owner's /ivertinimas and /klaida comments from pipeline PRs in
+# the site repo into state/ratings.json + ratings.md (Phase 2 checkpoint: five
+# shadow articles rated ≥ 4/5 with zero factual errors). No model calls.
+# Needs SITE_REPO_TOKEN (read PRs); exits quietly without it. TELEGRAM_* are
+# used once, when the checkpoint is first reached.
+
+on:
+  schedule:
+    - cron: '41 5 * * *'
+  workflow_dispatch:
+
+concurrency:
+  group: ratings
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  collect:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: write # state branch
+    env:
+      SITE_REPO: mykolas268-jpg/verslas
+    steps:
+      - name: Require the site token
+        id: token
+        env:
+          GH_TOKEN: ${{ secrets.SITE_REPO_TOKEN }}
+        run: |
+          if [ -z "$GH_TOKEN" ]; then
+            echo "::notice::SITE_REPO_TOKEN not set — no shadow PRs to read yet."
+            echo "go=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "go=true" >> "$GITHUB_OUTPUT"
+          fi
+      - if: steps.token.outputs.go == 'true'
+        uses: actions/checkout@v5
+      - if: steps.token.outputs.go == 'true'
+        uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+      - if: steps.token.outputs.go == 'true'
+        run: npm ci
+      - name: Read pipeline PRs and their comments
+        if: steps.token.outputs.go == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.SITE_REPO_TOKEN }}
+        run: |
+          gh pr list --repo "$SITE_REPO" --label pipeline --state all --limit 200 \
+            --json number,title,url,state,comments > prs.json
+          echo "PRs: $(jq length prs.json)"
+      - name: Check out state
+        if: steps.token.outputs.go == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          remote="https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
+          if git ls-remote --exit-code --heads "$remote" state >/dev/null 2>&1; then
+            git clone --quiet --depth 1 --branch state "$remote" state
+          else
+            mkdir state && git -C state init -q -b state && git -C state remote add origin "$remote"
+          fi
+      - name: Collect ratings
+        if: steps.token.outputs.go == 'true'
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          OWNER: ${{ github.repository_owner }}
+        run: |
+          npm run -s pipeline -- ratings --prs prs.json --owner "$OWNER" --state state | tee -a "$GITHUB_STEP_SUMMARY"
+      - name: Save state
+        if: steps.token.outputs.go == 'true'
+        run: |
+          scripts/push-state.sh state "ratings: ${GITHUB_RUN_ID}"

@@ -47,6 +47,20 @@ Models only return data. All git, HTTP and PR work is deterministic code.
 2. **Variables**: `PIPELINE_PAUSED` = `false` (set `true` to stop everything).
 3. Nothing else: the `state` branch is created on the first run.
 
+## Rating shadow articles
+
+Comment on a shadow PR in the site repo:
+
+```text
+/ivertinimas 4 gera struktūra, per ilgas įvadas
+/klaida Kaina ne 20 USD, o 25 USD
+```
+
+Only the repo owner's comments count; the latest rating wins and every
+`/klaida` line is kept. *Shadow ratings* (`.github/workflows/ratings.yml`,
+daily) collects them into `state/ratings.md` and tracks the Phase 2
+checkpoint: five articles rated ≥ 4/5 with no factual errors.
+
 ## Running
 
 - **On GitHub (normal):** Actions → *Article (shadow)* → Run workflow → a topic

@@ -29,7 +29,7 @@ Date: 2026-09-24.
 | Phase | Status |
 | --- | --- |
 | 1 | Code done in verslas#2 (CI, SEO, canonical www fix, content cleanup, policies, inquiry API). Waiting for merge; Vercel items deferred. |
-| 2 | Vertical slice built: `article` CLI, research → fact sheet (provenance-checked) → writer → Lithuanian editor → gates (Lithuanian/Hunspell, SEO, structure/MDX, link allowlist on rendered MDX, fact-check + number check, links resolve) → up to 2 revisions → shadow draft PR → Telegram notification to the owner. Eval harness (6 topics, hourly auto-start once the key exists). 120 tests incl. golden articles and pathological-input performance tests; five code-audit rounds done (see Evaluation). **Not yet run against the real API** (needs `ANTHROPIC_API_KEY`; `SITE_REPO_TOKEN` for PRs; `TELEGRAM_*` optional). |
+| 2 | Vertical slice built: `article` CLI, research → fact sheet (provenance-checked) → writer → Lithuanian editor → gates (Lithuanian/Hunspell, SEO, structure/MDX, link allowlist on rendered MDX, fact-check + number check, links resolve) → up to 2 revisions → shadow draft PR → Telegram notification to the owner → the owner's `/ivertinimas` / `/klaida` comments collected daily into `state/ratings.md` (checkpoint tracking). Eval harness (6 topics, hourly auto-start once the key exists). 120 tests incl. golden articles and pathological-input performance tests; five code-audit rounds done (see Evaluation). **Not yet run against the real API** (needs `ANTHROPIC_API_KEY`; `SITE_REPO_TOKEN` for PRs; `TELEGRAM_*` optional). |
 
 ### Evaluation (owner goal: ≥ 70 % "accuracy")
 
