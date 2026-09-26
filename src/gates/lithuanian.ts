@@ -211,6 +211,7 @@ export function checkLithuanian(input: LithuanianInput, options: LithuanianOptio
     const stems = options.glossary.spelling.stems.map((stem) => stem.toLowerCase());
     const seen = new Set<string>();
     const typos: { word: string; closest: string }[] = [];
+    const unknown: { word: string; closest: string | undefined }[] = [];
     for (const { word, suggestions } of misspellings) {
       const lower = word.toLowerCase();
       if (seen.has(lower)) continue;
@@ -229,11 +230,18 @@ export function checkLithuanian(input: LithuanianInput, options: LithuanianOptio
         word.length >= 5 &&
         levenshtein(lower, closest.toLowerCase()) === 1;
       if (likelyTypo) typos.push({ word, closest });
-      else warnings.push(`Hunspell nežino žodžio „${word}“${closest ? ` (siūlo „${closest}“)` : ''}.`);
+      else unknown.push({ word, closest });
     }
-    // A valid English word is a term or an example, not a Lithuanian typo.
-    // Without the en_US dictionary every candidate stays an error (fail closed).
-    const englishTypos = english(typos.map((typo) => typo.word));
+    // One en_US lookup for every candidate. A valid English word is a term, an
+    // example or part of a product name ("Business", "Team"), not a Lithuanian typo.
+    const englishWords = english([...typos, ...unknown].map((item) => item.word));
+    // Unknown words that are English are left out of the report: in comparisons
+    // they are dozens of plan names and would bury the words worth checking.
+    for (const { word, closest } of unknown) {
+      if (!englishWords?.has(word)) warnings.push(`Hunspell nežino žodžio „${word}“${closest ? ` (siūlo „${closest}“)` : ''}.`);
+    }
+    // Without the en_US dictionary every typo candidate stays an error (fail closed).
+    const englishTypos = englishWords;
     if (englishTypos === null && typos.length > 0) warnings.push('hunspell (en_US) neįdiegtas — angliški terminai laikomi klaidomis');
     for (const { word, closest } of typos) {
       if (englishTypos?.has(word)) warnings.push(`Angliškas žodis „${word}“ — patikrink, ar jis čia reikalingas.`);

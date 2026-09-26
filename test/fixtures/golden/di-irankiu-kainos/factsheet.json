@@ -1,0 +1,239 @@
+{
+  "topic": "Fictional business AI assistants compared (golden regression article; products are test fixtures)",
+  "articleType": "comparison",
+  "summary": "Golden regression article comparing three fictional business AI assistant plans.",
+  "primaryKeyword": "DI įrankiai verslui kainos",
+  "secondaryKeywords": [
+    "DI asistentų palyginimas",
+    "DI įrankių kainos"
+  ],
+  "questions": [
+    "Kiek kainuoja DI asistentas verslui?",
+    "Kuris DI įrankis moka lietuviškai?",
+    "Ar DI įrankiai naudoja verslo duomenis mokymui?"
+  ],
+  "claims": [
+    {
+      "id": "C1",
+      "claim": "ExampleChat Business costs 25 USD per user per month billed annually, or 30 USD per user per month billed monthly",
+      "kind": "price",
+      "value": "25 USD / 30 USD",
+      "sources": [
+        {
+          "url": "https://examplechat.example/business/pricing",
+          "publisher": "ExampleChat",
+          "title": "Business pricing",
+          "date": null,
+          "tier": "primary"
+        }
+      ],
+      "verifiedByPrimary": true,
+      "confidence": "high"
+    },
+    {
+      "id": "C2",
+      "claim": "ExampleChat Business requires at least 2 users",
+      "kind": "requirement",
+      "value": "2 users",
+      "sources": [
+        {
+          "url": "https://examplechat.example/business/pricing",
+          "publisher": "ExampleChat",
+          "title": "Business pricing",
+          "date": null,
+          "tier": "primary"
+        }
+      ],
+      "verifiedByPrimary": true,
+      "confidence": "high"
+    },
+    {
+      "id": "C3",
+      "claim": "ExampleChat does not use Business workspace data to train models by default",
+      "kind": "feature",
+      "value": null,
+      "sources": [
+        {
+          "url": "https://examplechat.example/business/privacy",
+          "publisher": "ExampleChat",
+          "title": "Business privacy",
+          "date": null,
+          "tier": "primary"
+        }
+      ],
+      "verifiedByPrimary": true,
+      "confidence": "high"
+    },
+    {
+      "id": "C4",
+      "claim": "ExampleChat Business offers EU data residency",
+      "kind": "availability",
+      "value": null,
+      "sources": [
+        {
+          "url": "https://examplechat.example/business/privacy",
+          "publisher": "ExampleChat",
+          "title": "Business privacy",
+          "date": null,
+          "tier": "primary"
+        }
+      ],
+      "verifiedByPrimary": true,
+      "confidence": "high"
+    },
+    {
+      "id": "C5",
+      "claim": "SampleAI Team costs 30 USD per user per month and requires at least 5 users",
+      "kind": "price",
+      "value": "30 USD, 5 users",
+      "sources": [
+        {
+          "url": "https://sampleai.example/team",
+          "publisher": "SampleAI",
+          "title": "Team plan",
+          "date": null,
+          "tier": "primary"
+        }
+      ],
+      "verifiedByPrimary": true,
+      "confidence": "high"
+    },
+    {
+      "id": "C6",
+      "claim": "SampleAI answers in Lithuanian, but its interface is available only in English",
+      "kind": "feature",
+      "value": null,
+      "sources": [
+        {
+          "url": "https://sampleai.example/help/languages",
+          "publisher": "SampleAI",
+          "title": "Languages",
+          "date": null,
+          "tier": "primary"
+        }
+      ],
+      "verifiedByPrimary": true,
+      "confidence": "high"
+    },
+    {
+      "id": "C7",
+      "claim": "SampleAI Team includes a 14-day free trial",
+      "kind": "feature",
+      "value": "14 days",
+      "sources": [
+        {
+          "url": "https://sampleai.example/team",
+          "publisher": "SampleAI",
+          "title": "Team plan",
+          "date": null,
+          "tier": "primary"
+        }
+      ],
+      "verifiedByPrimary": true,
+      "confidence": "high"
+    },
+    {
+      "id": "C8",
+      "claim": "DemoBot Workspace is included in the DemoSuite Business Standard plan, which costs 20 EUR per user per month",
+      "kind": "price",
+      "value": "20 EUR",
+      "sources": [
+        {
+          "url": "https://demobot.example/workspace/pricing",
+          "publisher": "DemoSuite",
+          "title": "DemoBot Workspace pricing",
+          "date": null,
+          "tier": "primary"
+        }
+      ],
+      "verifiedByPrimary": true,
+      "confidence": "high"
+    },
+    {
+      "id": "C9",
+      "claim": "DemoBot Workspace stores data in the EU for customers in EU countries",
+      "kind": "availability",
+      "value": null,
+      "sources": [
+        {
+          "url": "https://demobot.example/workspace/data-residency",
+          "publisher": "DemoSuite",
+          "title": "Data residency",
+          "date": null,
+          "tier": "primary"
+        }
+      ],
+      "verifiedByPrimary": true,
+      "confidence": "high"
+    },
+    {
+      "id": "C10",
+      "claim": "DemoBot Workspace interface is available in Lithuanian",
+      "kind": "feature",
+      "value": null,
+      "sources": [
+        {
+          "url": "https://demobot.example/workspace/pricing",
+          "publisher": "DemoSuite",
+          "title": "DemoBot Workspace pricing",
+          "date": null,
+          "tier": "primary"
+        }
+      ],
+      "verifiedByPrimary": true,
+      "confidence": "high"
+    },
+    {
+      "id": "C11",
+      "claim": "All three plans are available to business customers in Lithuania",
+      "kind": "availability",
+      "value": null,
+      "sources": [
+        {
+          "url": "https://examplechat.example/business/pricing",
+          "publisher": "ExampleChat",
+          "title": "Business pricing",
+          "date": null,
+          "tier": "primary"
+        },
+        {
+          "url": "https://sampleai.example/team",
+          "publisher": "SampleAI",
+          "title": "Team plan",
+          "date": null,
+          "tier": "primary"
+        },
+        {
+          "url": "https://demobot.example/workspace/pricing",
+          "publisher": "DemoSuite",
+          "title": "DemoBot Workspace pricing",
+          "date": null,
+          "tier": "primary"
+        }
+      ],
+      "verifiedByPrimary": true,
+      "confidence": "high"
+    }
+  ],
+  "unknowns": [
+    "Whether SampleAI Team prices include VAT for EU customers"
+  ],
+  "conflicts": [],
+  "ltEuContext": {
+    "euAvailability": "All available (C11)",
+    "ltAvailability": "All available (C11)",
+    "lithuanianLanguageSupport": "DemoBot interface (C10); SampleAI answers only (C6)",
+    "pricing": "C1, C5, C8",
+    "gdprNotes": "EU data residency: ExampleChat (C4), DemoBot (C9)",
+    "aiActNotes": "unknown",
+    "alternatives": []
+  },
+  "useCases": [
+    "Drafting customer emails",
+    "Summarising meeting notes"
+  ],
+  "risks": [
+    "Minimum user counts raise the real price (C2, C5)"
+  ],
+  "isLegalTopic": false
+}

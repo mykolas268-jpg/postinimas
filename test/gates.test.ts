@@ -107,6 +107,19 @@ describe('Lithuanian gate', () => {
     expect(missing.warnings.join()).toMatch(/en_US/);
   });
 
+  it('leaves English plan names out of the unknown-word warnings', () => {
+    const result = checkLithuanian(
+      { title: 'A', seoTitle: 'A', excerpt: 'A', body: 'x', faq: [] },
+      {
+        glossary: pc.glossary, banned: pc.banned, dash: '—',
+        spellcheck: () => [{ word: 'Business', suggestions: ['Busiškis'] }, { word: 'DemoBot', suggestions: [] }],
+        english: (words) => new Set(words.filter((word) => word === 'Business')),
+      },
+    );
+    expect(result.warnings.join()).not.toMatch(/Business/);
+    expect(result.warnings.join()).toMatch(/DemoBot/);
+  });
+
   it('real hunspell (en_US) knows English terms and not Lithuanian words when installed', () => {
     const known = hunspellEn(['crane', 'photo', 'užsakimas']);
     if (known === null) return; // en_US dictionary not installed on this machine

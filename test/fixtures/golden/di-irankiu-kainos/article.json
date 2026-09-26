@@ -1,0 +1,23 @@
+{
+  "title": "DI įrankiai verslui: kainos ir palyginimas",
+  "seoTitle": "DI įrankiai verslui: kainos ir lietuvių kalba",
+  "slug": "di-irankiai-verslui-kainos",
+  "excerpt": "Kiek kainuoja DI įrankiai verslui ir kurie iš jų supranta lietuviškai: trijų verslo planų kainos, minimalus vartotojų skaičius ir duomenų tvarkymas.",
+  "type": "comparison",
+  "cluster": "di-irankiai",
+  "keyword": "DI įrankiai verslui kainos",
+  "legal": false,
+  "sourceUrls": [
+    "https://examplechat.example/business/pricing",
+    "https://sampleai.example/team",
+    "https://demobot.example/workspace/pricing",
+    "https://examplechat.example/business/privacy",
+    "https://demobot.example/workspace/data-residency",
+    "https://sampleai.example/help/languages"
+  ],
+  "faq": [
+    { "q": "Kiek kainuoja DI asistentas verslui?", "a": "Palygintų planų kaina yra nuo 20 EUR (DemoSuite Business Standard su DemoBot Workspace) iki 30 USD vienam vartotojui per mėnesį. SampleAI Team reikia pirkti bent 5 vartotojams." },
+    { "q": "Kuris DI įrankis moka lietuviškai?", "a": "Lietuvišką sąsają turi tik DemoBot Workspace. SampleAI atsako lietuviškai, bet jo sąsaja yra tik anglų kalba." },
+    { "q": "Ar DI įrankiai naudoja verslo duomenis mokymui?", "a": "ExampleChat pagal numatytuosius nustatymus nenaudoja verslo paskyros duomenų modeliams mokyti. Apie kitus planus verta paklausti tiekėjo prieš perkant." }
+  ]
+}
